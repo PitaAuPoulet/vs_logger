@@ -50,6 +50,9 @@ Locales['en'] = {
     ['sentinel_cleared_data'] = 'Cleared suspicious data for identifier: %s',
     ['sentinel_unauthorized_clear'] = 'Unauthorized clearPlayerData attempt by source %d',
     
+    -- Bridge errors
+    ['bridge_error'] = 'Error: vs_bridge not available or GetPlayerGrade failed',
+    
     -- Reports
     ['report_suspicious_header'] = '========== Suspicious Players Report ==========',
     ['report_suspicious_entry'] = '[%d] %s - Detections: %d, First: %s',

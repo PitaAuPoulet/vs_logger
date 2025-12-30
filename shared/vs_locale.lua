@@ -21,6 +21,19 @@ function _L(key, ...)
     return translation
 end
 
+-- Obtenir le code couleur pour un niveau de log
+local function getColorCode(level)
+    if level == 'error' then
+        return '^1'
+    elseif level == 'warning' then
+        return '^3'
+    elseif level == 'success' then
+        return '^2'
+    else
+        return '^7'
+    end
+end
+
 -- Fonction de logging compatible avec vs_bridge
 -- Utilise Bridge.Log si disponible, sinon print
 function VsLog(level, message, ...)
@@ -37,26 +50,12 @@ function VsLog(level, message, ...)
         
         -- Si vs_bridge.Log n'existe pas, utiliser print avec couleur
         if not success then
-            local colorCode = '^7'
-            if level == 'error' then
-                colorCode = '^1'
-            elseif level == 'warning' then
-                colorCode = '^3'
-            elseif level == 'success' then
-                colorCode = '^2'
-            end
+            local colorCode = getColorCode(level)
             print(string.format('%s[vs_logger]^7 %s', colorCode, formattedMessage))
         end
     else
         -- Fallback vers print avec couleur
-        local colorCode = '^7'
-        if level == 'error' then
-            colorCode = '^1'
-        elseif level == 'warning' then
-            colorCode = '^3'
-        elseif level == 'success' then
-            colorCode = '^2'
-        end
+        local colorCode = getColorCode(level)
         print(string.format('%s[vs_logger]^7 %s', colorCode, formattedMessage))
     end
 end

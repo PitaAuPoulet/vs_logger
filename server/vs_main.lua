@@ -149,7 +149,7 @@ local function VerifyPlayerGrade(source, requiredGrade)
     end)
     
     if not success then
-        VsLog('error', "Error: vs_bridge not available or GetPlayerGrade failed")
+        VsLog('error', _L('bridge_error'))
         return false
     end
     
