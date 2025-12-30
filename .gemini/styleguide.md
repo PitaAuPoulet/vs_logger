@@ -1,25 +1,48 @@
-# Vitaswift Architecture Styleguide
-**Author: Vitaswift | Version: 1.1.0**
+# Vitaswift Development Style Guide
+> Standards de développement pour l'architecture "CodeArchitect Elite".
 
-Ce document définit les règles absolues pour tout développement au sein du namespace Vitaswift. L'agent Gemini doit utiliser ces règles pour chaque review de Pull Request.
+## 1. Principes Généraux
+* **Philosophie** : Robustesse maximale, Zéro dépendance directe aux frameworks.
+* **Stack** : Lua 5.4, OxMySQL, FiveM Natives.
 
-## 1. Standards de Nommage
-- **Préfixe Obligatoire :** Tous les fichiers, dossiers, variables globales et exports DOIVENT commencer par le préfixe `vs_`.
-- **Exemple :** `vs_main.lua`, `vs_bridge`, `exports.vs_logger:SendLog`.
+## 2. Règles de Nomenclature
+### Ressources (Dossiers)
+* Tout nouveau script doit être préfixé par `vs_`.
+* Exemple : `vs_shop`, `vs_garage`.
 
-## 2. Doctrine Zero-SQL
-- Aucun fichier `.sql` n'est autorisé.
-- L'initialisation de la base de données (création de tables/colonnes) doit être gérée dynamiquement en Lua au démarrage de la ressource (Server-side).
+### Fichiers
+* Utiliser une nomenclature sémantique standard sans préfixe.
+* `client.lua`
+* `server.lua`
+* `config.lua`
+* `locales/fr.lua`
 
-## 3. Système de Bridge (vs_bridge)
-- Interdiction d'utiliser des natives ou des fonctions spécifiques à un framework (ESX, QBCore, Ox) directement.
-- Toute interaction (grade, inventaire, target, notification) doit impérativement passer par `vs_bridge`.
+### Conventions de Langue
+* **Code (Variables, Fonctions)** : ANGLAIS (CamelCase).
+* **Commentaires & Documentation** : FRANÇAIS.
+* **Commits** : Conventionnel (ex: `feat: ajout du système de logs`).
 
-## 4. Sécurité Sentinel
-- Chaque `RegisterNetEvent` déclenché par le client doit être validé côté serveur.
-- Vérification systématique de la `source` et des permissions via le bridge pour toute action sensible.
-- Implémentation obligatoire de protections contre le spam de triggers (Rate-limiting).
+## 3. Architecture Technique
 
-## 5. Documentation & Signature
-- Chaque fichier doit comporter le header suivant : `Author: Vitaswift | Version: [VERSION]`.
-- Les exports doivent être documentés avec leurs paramètres et types attendus.
+### A. Le "Bridge" (Dépendance Unique)
+Tous les scripts doivent être agnostiques du framework (ESX/QBCore).
+* **Règle** : Ne JAMAIS importer `ESX` ou `QBCore` directement.
+* **Usage** : Tout passe par `vs_bridge`.
+    * Framework : `Bridge.GetPlayer()`, `Bridge.GetJob()`
+    * Inventaire : `Bridge.HasItem()`, `Bridge.AddItem()`
+    * Logs : `Bridge.Log(level, message)` (Ne pas utiliser `print` ou `vs_logger` direct).
+
+### B. Zero-SQL (Base de Données)
+* **Interdiction** : Aucun fichier `.sql` dans le dépôt.
+* **Implémentation** : La création des tables doit se faire au démarrage du serveur (`server.lua`).
+* **Méthode** : Utiliser `MySQL.ready()` et la syntaxe `CREATE TABLE IF NOT EXISTS` pour garantir l'idempotence (pas d'erreur si la table existe déjà).
+
+### C. Sécurité (Server-Side)
+* Ne jamais faire confiance au client (Never Trust Client).
+* Valider toutes les entrées, distances et quantités côté serveur.
+* Utiliser des Tokens pour les événements sensibles.
+
+## 4. Documentation
+* Chaque fichier Lua doit commencer par l'en-tête :
+  `-- Author: Vitaswift | Version: 1.0.0`
+* Le fichier `config.lua` doit être abondamment commenté en français pour faciliter la configuration par l'utilisateur final.
