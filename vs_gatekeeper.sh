@@ -16,6 +16,10 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Configuration
+EXEMPT_FILES="^(fxmanifest|config|examples)\.lua$"
+AUTO_CREATE_PATTERNS=("CREATE TABLE IF NOT EXISTS" "InitializeDatabase" "AutoCreateTables")
+
 # Compteurs
 TOTAL_CHECKS=5
 PASSED_CHECKS=0
@@ -23,6 +27,12 @@ FAILED_CHECKS=0
 
 # Répertoire du projet (par défaut, répertoire courant)
 PROJECT_DIR="${1:-.}"
+
+# Validation du répertoire
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo -e "${RED}Erreur: Le répertoire '$PROJECT_DIR' n'existe pas${NC}"
+    exit 1
+fi
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  VITASWIFT ARCHITECTURE GATEKEEPER${NC}"
@@ -41,7 +51,7 @@ check_naming_standard() {
         filename=$(basename "$file")
         
         # Ignorer les fichiers spéciaux
-        if [[ ! "$filename" =~ ^(fxmanifest|config|examples)\.lua$ ]]; then
+        if [[ ! "$filename" =~ $EXEMPT_FILES ]]; then
             if [[ ! "$filename" =~ ^vs_ ]]; then
                 echo -e "  ${YELLOW}❌ Fichier '$filename' ne commence pas par 'vs_'${NC}"
                 ((issues++))
@@ -80,9 +90,12 @@ check_zero_sql() {
     # Vérifier la présence de l'auto-création de tables
     auto_create_found=false
     if [ -f "$PROJECT_DIR/server/vs_main.lua" ]; then
-        if grep -q "CREATE TABLE IF NOT EXISTS\|InitializeDatabase\|AutoCreateTables" "$PROJECT_DIR/server/vs_main.lua"; then
-            auto_create_found=true
-        fi
+        for pattern in "${AUTO_CREATE_PATTERNS[@]}"; do
+            if grep -q "$pattern" "$PROJECT_DIR/server/vs_main.lua"; then
+                auto_create_found=true
+                break
+            fi
+        done
     fi
     
     if [ "$auto_create_found" = false ]; then
