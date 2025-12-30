@@ -1,64 +1,64 @@
 --[[
-    vs_logger Configuration
-    Author: Vitaswift
-    Version: 1.1.0
+    vs_logger - Configuration
+    Author: Vitaswift | Version: 1.0.0
 ]]
 
 Config = {}
 
--- Vitaswift Metadata
+-- Métadonnées Vitaswift
 Config.Author = "Vitaswift"
 Config.Version = "1.1.0"
 Config.Prefix = "vs_"
+Config.Locale = "fr" -- Langue par défaut (fr/en)
 
--- Bridge Integration
+-- Intégration Bridge
 Config.UseBridge = true
 Config.BridgeName = "vs_bridge"
-Config.MinAdminGrade = 3 -- Minimum grade required for security logs
+Config.MinAdminGrade = 3 -- Grade minimum requis pour les logs de sécurité
 
--- Database Configuration (MySQL/MariaDB)
-Config.AutoCreateTables = true -- Zero-SQL: Automatically create tables if they don't exist
+-- Configuration Base de Données (MySQL/MariaDB)
+Config.AutoCreateTables = true -- Zero-SQL: Créer automatiquement les tables si elles n'existent pas
 
--- Webhook Configuration
+-- Configuration Webhook
 Config.Webhooks = {
-    -- Standard logs webhook
+    -- Webhook des logs standards
     Standard = {
         enabled = true,
-        url = "", -- Add your Discord webhook URL here
+        url = "", -- Ajoutez votre URL de webhook Discord ici
         colors = {
-            info = 3447003,    -- Blue
-            success = 3066993, -- Green
+            info = 3447003,    -- Bleu
+            success = 3066993, -- Vert
             warning = 15844367, -- Orange
-            error = 15158332   -- Red
+            error = 15158332   -- Rouge
         }
     },
     
-    -- Security alerts webhook (separate for high priority)
+    -- Webhook des alertes de sécurité (séparé pour haute priorité)
     Security = {
         enabled = true,
-        url = "", -- Add your security webhook URL here
-        color = 15158332, -- Red
-        mentionRole = "" -- Optional: Discord role ID to mention (@everyone, @here, or role ID)
+        url = "", -- Ajoutez votre URL de webhook de sécurité ici
+        color = 15158332, -- Rouge
+        mentionRole = "" -- Optionnel: ID du rôle Discord à mentionner (@everyone, @here, ou ID de rôle)
     }
 }
 
--- Rate Limiting Configuration
+-- Configuration de Limitation de Taux
 Config.RateLimit = {
     enabled = true,
-    maxRequestsPerMinute = 30, -- Maximum logs per player per minute
-    cooldownAfterLimit = 60,   -- Cooldown in seconds after hitting limit
-    alertAfterViolations = 3,  -- Send security alert after X violations
+    maxRequestsPerMinute = 30, -- Maximum de logs par joueur par minute
+    cooldownAfterLimit = 60,   -- Cooldown en secondes après avoir atteint la limite
+    alertAfterViolations = 3,  -- Envoyer une alerte de sécurité après X violations
     whitelist = {
-        -- Steam IDs that bypass rate limiting (for trusted scripts)
-        -- Example: "steam:110000xxxxxxxx"
+        -- Steam IDs qui contournent la limitation de taux (pour les scripts de confiance)
+        -- Exemple: "steam:110000xxxxxxxx"
     }
 }
 
--- Sentinel Configuration (Anti-Cheat)
+-- Configuration Sentinel (Anti-Cheat)
 Config.Sentinel = {
     enabled = true,
     
-    -- HoneyPot Events (fake events to trap menu executors)
+    -- Événements HoneyPot (faux événements pour piéger les exécuteurs de menus)
     honeyPotEvents = {
         "vs_logger:giveAllWeapons",
         "vs_logger:addMoney",
@@ -70,12 +70,12 @@ Config.Sentinel = {
         "vs_logger:bypassAnticheat"
     },
     
-    -- Suspicious Pattern Detection
+    -- Détection de Motifs Suspects
     patterns = {
         enabled = true,
         sensitivity = "medium", -- low, medium, high
         
-        -- Suspicious keywords by category
+        -- Mots-clés suspects par catégorie
         keywords = {
             cheats = {
                 "aimbot", "wallhack", "esp", "triggerbot", "noclip", 
@@ -98,7 +98,7 @@ Config.Sentinel = {
             }
         },
         
-        -- Minimum matches required to flag as suspicious
+        -- Correspondances minimales requises pour signaler comme suspect
         thresholds = {
             low = 1,
             medium = 2,
@@ -107,7 +107,7 @@ Config.Sentinel = {
     }
 }
 
--- Log Types Configuration
+-- Configuration des Types de Logs
 Config.LogTypes = {
     player = {
         enabled = true,
@@ -126,7 +126,7 @@ Config.LogTypes = {
         enabled = true,
         webhook = "Security",
         color = "error",
-        requiresGrade = 4 -- Higher grade required
+        requiresGrade = 4 -- Grade plus élevé requis
     },
     
     system = {
@@ -142,24 +142,24 @@ Config.LogTypes = {
     }
 }
 
--- Performance Settings
+-- Paramètres de Performance
 Config.Performance = {
-    asyncDatabase = true,        -- Use async database operations
-    batchLogging = false,        -- Batch multiple logs (experimental)
-    batchSize = 10,              -- Number of logs per batch
-    batchInterval = 5000,        -- Interval in ms
-    maxConcurrentQueries = 5     -- Maximum concurrent database queries
+    asyncDatabase = true,        -- Utiliser des opérations de base de données asynchrones
+    batchLogging = false,        -- Journalisation par lots (expérimental)
+    batchSize = 10,              -- Nombre de logs par lot
+    batchInterval = 5000,        -- Intervalle en ms
+    maxConcurrentQueries = 5     -- Requêtes de base de données concurrentes maximales
 }
 
--- Sentinel Data Management
+-- Gestion des Données Sentinel
 Config.SentinelDataManagement = {
-    cleanupInterval = 600000,    -- Cleanup interval in milliseconds (10 minutes)
-    honeyPotRetention = 3600,    -- Keep honeypot triggers in seconds (1 hour)
-    suspiciousRetention = 86400, -- Keep suspicious data in seconds (24 hours)
-    minDetectionsToKeep = 5      -- Keep data if player has this many detections
+    cleanupInterval = 600000,    -- Intervalle de nettoyage en millisecondes (10 minutes)
+    honeyPotRetention = 3600,    -- Conserver les déclenchements honeypot en secondes (1 heure)
+    suspiciousRetention = 86400, -- Conserver les données suspectes en secondes (24 heures)
+    minDetectionsToKeep = 5      -- Conserver les données si le joueur a ce nombre de détections
 }
 
--- Debug Mode
-Config.Debug = false -- Set to true for verbose logging
+-- Mode Debug
+Config.Debug = false -- Définir à true pour la journalisation verbeuse
 
 return Config

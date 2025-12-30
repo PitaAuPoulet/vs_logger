@@ -1,20 +1,19 @@
 --[[
     vs_logger - Sentinel Edition
-    Author: Vitaswift
-    Version: 1.1.0
+    Author: Vitaswift | Version: 1.0.0
     
-    Advanced logging system with built-in security monitoring
-    and anti-cheat capabilities for FiveM servers.
+    Système de journalisation avancé avec surveillance de sécurité intégrée
+    et capacités anti-cheat pour les serveurs FiveM.
 ]]
 
 fx_version 'cerulean'
 game 'gta5'
 
 author 'Vitaswift'
-description 'vs_logger - Advanced Logging & Security Monitoring System (Sentinel Edition)'
+description 'vs_logger - Système Avancé de Journalisation & Surveillance de Sécurité (Sentinel Edition)'
 version '1.1.0'
 
--- Vitaswift Metadata
+-- Métadonnées Vitaswift
 vs_metadata {
     prefix = 'vs_',
     category = 'logging',
@@ -25,15 +24,22 @@ vs_metadata {
 -- Configuration
 shared_script 'config.lua'
 
--- Server Scripts
+-- Locales
+shared_scripts {
+    'shared/vs_locale.lua',
+    'locales/fr.lua',
+    'locales/en.lua'
+}
+
+-- Scripts Serveur
 server_scripts {
     'server/vs_main.lua',
     'server/vs_sentinel.lua'
 }
 
--- Dependencies
+-- Dépendances
 dependencies {
-    'vs_bridge' -- Required for grade verification
+    'vs_bridge' -- Requis pour la vérification des grades
 }
 
 -- Exports
@@ -41,5 +47,5 @@ server_exports {
     'SendLog'
 }
 
--- Disable specific natives for security
+-- Désactiver certains natives pour la sécurité
 disable_npc_spawn_blocking 'false'
