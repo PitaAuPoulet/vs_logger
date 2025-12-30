@@ -152,6 +152,14 @@ Config.Performance = {
     maxConcurrentQueries = 5     -- Maximum concurrent database queries
 }
 
+-- Sentinel Data Management
+Config.SentinelDataManagement = {
+    cleanupInterval = 600000,    -- Cleanup interval in ms (10 minutes)
+    honeyPotRetention = 3600,    -- Keep honeypot triggers for 1 hour
+    suspiciousRetention = 86400, -- Keep suspicious data for 24 hours
+    minDetectionsToKeep = 5      -- Keep data if player has this many detections
+}
+
 -- Debug Mode
 Config.Debug = false -- Set to true for verbose logging
 

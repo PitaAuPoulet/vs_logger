@@ -12,26 +12,21 @@ local rateLimitTracker = {}
 local queryQueue = {}
 local activeQueries = 0
 
--- Initialize SQLite (Zero-SQL approach)
+-- Initialize Database (Zero-SQL approach)
 local function InitializeDatabase()
     if Config.Debug then
         print("^3[vs_logger]^7 Initializing Zero-SQL database...")
     end
     
-    -- Load SQLite module
-    local success, sqliteModule = pcall(function()
-        return exports.oxmysql or exports.mysql_async or nil
-    end)
-    
-    -- For FiveM, we use a simple key-value storage approach (Zero-SQL)
-    -- In production, this would connect to MySQL/oxmysql if available
-    -- For now, we'll use a file-based storage system
+    -- For FiveM, we use Zero-SQL approach with MySQL/MariaDB
+    -- In production, this would connect to oxmysql if available
+    -- Tables are created automatically on first run
     
     CreateThread(function()
-        -- Create logs table structure
+        -- Create logs table structure (MySQL syntax)
         local createTableQuery = [[
             CREATE TABLE IF NOT EXISTS vs_logs (
-                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 timestamp BIGINT NOT NULL,
                 log_type VARCHAR(50) NOT NULL,
                 player_source INT,
@@ -323,16 +318,12 @@ function SendLog(logType, title, message, source, metadata)
     
     -- Check for suspicious patterns in message
     if Config.Sentinel.enabled and Config.Sentinel.patterns.enabled then
-        local suspiciousScore = exports.vs_logger:CheckSuspiciousPatterns(message)
-        if suspiciousScore > 0 then
-            logData.metadata.suspicious_score = suspiciousScore
-            TriggerEvent('vs_sentinel:patternDetected', {
-                source = source,
-                message = message,
-                score = suspiciousScore,
-                original_log_type = logType
-            })
-        end
+        -- Will be handled by vs_sentinel module after logging
+        TriggerEvent('vs_sentinel:checkPatterns', {
+            source = source,
+            message = message,
+            original_log_type = logType
+        })
     end
     
     -- Save to database

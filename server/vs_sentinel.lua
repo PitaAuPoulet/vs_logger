@@ -9,6 +9,10 @@
 local suspiciousPlayers = {}
 local honeyPotTriggers = {}
 
+-- Counters for performance (avoid iterating tables)
+local suspiciousPlayersCount = 0
+local honeyPotTriggersCount = 0
+
 -- Initialize HoneyPot Events
 local function InitializeHoneyPots()
     if not Config.Sentinel.enabled then
@@ -45,6 +49,7 @@ function LogHoneyPotTrigger(source, identifier, playerName, eventName, args)
     -- Track triggers for this player
     if not honeyPotTriggers[identifier] then
         honeyPotTriggers[identifier] = {}
+        honeyPotTriggersCount = honeyPotTriggersCount + 1
     end
     
     table.insert(honeyPotTriggers[identifier], {
@@ -139,6 +144,20 @@ end
 -- Export pattern checking function
 exports('CheckSuspiciousPatterns', CheckSuspiciousPatterns)
 
+-- Handle pattern checking request
+RegisterServerEvent('vs_sentinel:checkPatterns')
+AddEventHandler('vs_sentinel:checkPatterns', function(data)
+    local suspiciousScore = CheckSuspiciousPatterns(data.message)
+    if suspiciousScore > 0 then
+        TriggerEvent('vs_sentinel:patternDetected', {
+            source = data.source,
+            message = data.message,
+            score = suspiciousScore,
+            original_log_type = data.original_log_type
+        })
+    end
+end)
+
 -- Handle pattern detection events
 RegisterServerEvent('vs_sentinel:patternDetected')
 AddEventHandler('vs_sentinel:patternDetected', function(data)
@@ -152,6 +171,7 @@ AddEventHandler('vs_sentinel:patternDetected', function(data)
             patterns = {},
             firstDetection = os.time()
         }
+        suspiciousPlayersCount = suspiciousPlayersCount + 1
     end
     
     local playerData = suspiciousPlayers[identifier]
@@ -267,6 +287,7 @@ AddEventHandler('vs_sentinel:clearPlayerData', function(identifier)
     
     if suspiciousPlayers[identifier] then
         suspiciousPlayers[identifier] = nil
+        suspiciousPlayersCount = suspiciousPlayersCount - 1
         print(string.format("^2[vs_sentinel]^7 Cleared suspicious data for identifier: %s", identifier))
         
         exports.vs_logger:SendLog(
@@ -281,16 +302,15 @@ end)
 -- Periodic cleanup of old data
 CreateThread(function()
     while true do
-        Wait(600000) -- Every 10 minutes
+        Wait(Config.SentinelDataManagement.cleanupInterval)
         
         local currentTime = os.time()
-        local cleanupThreshold = 3600 -- 1 hour
         
         -- Clean old honeypot triggers
         for identifier, triggers in pairs(honeyPotTriggers) do
             local validTriggers = {}
             for _, trigger in ipairs(triggers) do
-                if currentTime - trigger.timestamp < cleanupThreshold then
+                if currentTime - trigger.timestamp < Config.SentinelDataManagement.honeyPotRetention then
                     table.insert(validTriggers, trigger)
                 end
             end
@@ -299,15 +319,18 @@ CreateThread(function()
                 honeyPotTriggers[identifier] = validTriggers
             else
                 honeyPotTriggers[identifier] = nil
+                honeyPotTriggersCount = honeyPotTriggersCount - 1
             end
         end
         
-        -- Clean old suspicious player data (keep for longer - 24 hours)
-        local suspiciousThreshold = 86400 -- 24 hours
+        -- Clean old suspicious player data
         for identifier, data in pairs(suspiciousPlayers) do
-            if currentTime - data.firstDetection > suspiciousThreshold and data.detections < 5 then
-                -- Only clean if not many detections
+            local shouldClean = (currentTime - data.firstDetection > Config.SentinelDataManagement.suspiciousRetention) 
+                and (data.detections < Config.SentinelDataManagement.minDetectionsToKeep)
+            
+            if shouldClean then
                 suspiciousPlayers[identifier] = nil
+                suspiciousPlayersCount = suspiciousPlayersCount - 1
             end
         end
         
@@ -427,19 +450,12 @@ function GetSentinelStatus()
     return {
         enabled = Config.Sentinel.enabled,
         honeyPotEvents = #Config.Sentinel.honeyPotEvents,
-        suspiciousPlayers = TableLength(suspiciousPlayers),
-        honeyPotTriggers = TableLength(honeyPotTriggers),
+        suspiciousPlayers = suspiciousPlayersCount,
+        honeyPotTriggers = honeyPotTriggersCount,
         patternDetection = Config.Sentinel.patterns.enabled
     }
 end
 
 exports('GetSentinelStatus', GetSentinelStatus)
 
--- Helper function to count table entries
-function TableLength(t)
-    local count = 0
-    for _ in pairs(t) do
-        count = count + 1
-    end
-    return count
-end
+
