@@ -289,6 +289,31 @@ For issues, questions, or contributions:
 - Review console output for errors
 - Check `.github/copilot-instructions.md` for development standards
 
+## 🛡️ Vitaswift Architecture Gatekeeper
+
+Ce repository inclut le **Vitaswift Architecture Gatekeeper** - un outil d'audit automatique qui garantit la conformité aux standards Vitaswift.
+
+### Critères de Validation (Zéro Tolérance)
+
+Le Gatekeeper vérifie automatiquement :
+
+1. ✅ **Standard de Nommage** - Tous les fichiers commencent par `vs_`
+2. ✅ **Doctrine Zero-SQL** - Pas de fichiers .sql, auto-création obligatoire
+3. ✅ **Intégrité du Bridge** - Utilisation exclusive de `vs_bridge`
+4. ✅ **Validation Sentinel** - Sécurité server-side stricte
+5. ✅ **Signature d'Architecte** - Header `Author: Vitaswift` obligatoire
+
+### Utilisation
+
+```bash
+# Audit local du projet
+./vs_gatekeeper.sh .
+
+# Le Gatekeeper s'exécute automatiquement sur chaque Pull Request
+```
+
+**Documentation complète:** Consultez [GATEKEEPER.md](GATEKEEPER.md) pour plus de détails.
+
 ## 🎯 Roadmap
 
 - [ ] Web dashboard for log viewing
