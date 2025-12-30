@@ -13,17 +13,19 @@ local queryQueue = {}
 local activeQueries = 0
 
 -- Initialize Database (Zero-SQL approach)
+-- NOTE: Requires MySQL/MariaDB database (uses MySQL-specific syntax)
 local function InitializeDatabase()
     if Config.Debug then
         print("^3[vs_logger]^7 Initializing Zero-SQL database...")
     end
     
     -- For FiveM, we use Zero-SQL approach with MySQL/MariaDB
-    -- In production, this would connect to oxmysql if available
-    -- Tables are created automatically on first run
+    -- Requires oxmysql or mysql-async resource
+    -- Tables are created automatically on first run (Zero-SQL)
     
     CreateThread(function()
-        -- Create logs table structure (MySQL syntax)
+        -- Create logs table structure (MySQL/MariaDB syntax)
+        -- Note: This uses MySQL-specific AUTO_INCREMENT syntax
         local createTableQuery = [[
             CREATE TABLE IF NOT EXISTS vs_logs (
                 id INT AUTO_INCREMENT PRIMARY KEY,

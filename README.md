@@ -26,7 +26,10 @@ Advanced logging and security monitoring system for FiveM servers with built-in 
 
 - FiveM Server (Build 2802 or newer)
 - `vs_bridge` resource (for grade verification)
-- MySQL/oxmysql (optional, for persistent storage)
+- **MySQL/MariaDB database** (required for persistent storage)
+- `oxmysql` or `mysql-async` resource (for database connection)
+
+**Note:** This resource uses MySQL-specific SQL syntax and requires a MySQL/MariaDB database to function properly.
 
 ## 🚀 Installation
 

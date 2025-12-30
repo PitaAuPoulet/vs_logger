@@ -102,7 +102,7 @@ end
 -- Check Suspicious Patterns
 function CheckSuspiciousPatterns(text)
     if not Config.Sentinel.patterns.enabled or not text then
-        return 0
+        return 0, {}
     end
     
     local text_lower = string.lower(text)
@@ -138,7 +138,7 @@ function CheckSuspiciousPatterns(text)
         return matchCount, matchedKeywords
     end
     
-    return 0
+    return 0, {}
 end
 
 -- Export pattern checking function
