@@ -13,6 +13,9 @@ local honeyPotTriggers = {}
 local suspiciousPlayersCount = 0
 local honeyPotTriggersCount = 0
 
+-- Resource state flag
+local isResourceStopping = false
+
 -- Initialize HoneyPot Events
 local function InitializeHoneyPots()
     if not Config.Sentinel.enabled then
@@ -302,8 +305,10 @@ end)
 
 -- Periodic cleanup of old data
 CreateThread(function()
-    while true do
+    while not isResourceStopping and Config.Sentinel.enabled do
         Wait(Config.SentinelDataManagement.cleanupInterval)
+        
+        if isResourceStopping then break end
         
         local currentTime = os.time()
         
@@ -338,6 +343,10 @@ CreateThread(function()
         if Config.Debug then
             print("^2[vs_sentinel]^7 Performed periodic data cleanup")
         end
+    end
+    
+    if Config.Debug then
+        print("^3[vs_sentinel]^7 Cleanup thread stopped")
     end
 end)
 
@@ -459,4 +468,13 @@ end
 
 exports('GetSentinelStatus', GetSentinelStatus)
 
+-- Cleanup on resource stop
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then
+        return
+    end
+    
+    isResourceStopping = true
+    print("^3[vs_sentinel]^7 Sentinel module stopped")
+end)
 

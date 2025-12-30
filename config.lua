@@ -153,9 +153,9 @@ Config.Performance = {
 
 -- Sentinel Data Management
 Config.SentinelDataManagement = {
-    cleanupInterval = 600000,    -- Cleanup interval in ms (10 minutes)
-    honeyPotRetention = 3600,    -- Keep honeypot triggers for 1 hour
-    suspiciousRetention = 86400, -- Keep suspicious data for 24 hours
+    cleanupInterval = 600000,    -- Cleanup interval in milliseconds (10 minutes)
+    honeyPotRetention = 3600,    -- Keep honeypot triggers in seconds (1 hour)
+    suspiciousRetention = 86400, -- Keep suspicious data in seconds (24 hours)
     minDetectionsToKeep = 5      -- Keep data if player has this many detections
 }
 

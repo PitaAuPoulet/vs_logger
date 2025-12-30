@@ -42,6 +42,8 @@ local function InitializeDatabase()
         ]]
         
         -- Execute table creation using oxmysql or mysql-async
+        -- Note: pcall only catches Lua errors, not SQL execution errors
+        -- For production, consider adding callback/promise handling if needed
         local success = pcall(function()
             if GetResourceState('oxmysql') == 'started' then
                 exports.oxmysql:execute(createTableQuery)
@@ -413,10 +415,27 @@ AddEventHandler('onResourceStop', function(resourceName)
         return
     end
     
-    -- Process remaining queue
+    -- Process remaining queue before stopping
     if #queryQueue > 0 then
-        print(string.format("^3[vs_logger]^7 Processing %d remaining logs...", #queryQueue))
-        Wait(2000) -- Give time to process
+        print(string.format("^3[vs_logger]^7 Processing %d remaining logs before shutdown...", #queryQueue))
+        
+        -- Process all queued logs
+        local processed = 0
+        while #queryQueue > 0 and processed < 100 do -- Limit to 100 for safety
+            local logData = table.remove(queryQueue, 1)
+            SaveToDatabase(logData)
+            processed = processed + 1
+            Wait(50) -- Small delay between operations
+        end
+        
+        -- Wait for active queries to complete
+        local waitTime = 0
+        while activeQueries > 0 and waitTime < 5000 do
+            Wait(100)
+            waitTime = waitTime + 100
+        end
+        
+        print(string.format("^2[vs_logger]^7 Processed %d queued logs", processed))
     end
     
     print("^3[vs_logger]^7 Logger system stopped")
