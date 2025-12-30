@@ -1,3 +1,4 @@
+-- Author: Vitaswift | Version: 1.0.0
 --[[
     vs_logger - Example Usage
     

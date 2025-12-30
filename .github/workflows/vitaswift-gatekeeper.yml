@@ -1,0 +1,102 @@
+name: Vitaswift Architecture Gatekeeper
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  vitaswift-audit:
+    name: Audit d'Architecture Vitaswift
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Execute Vitaswift Gatekeeper
+        id: gatekeeper
+        run: |
+          echo "🚀 Lancement de l'audit Vitaswift Architecture Gatekeeper..."
+          bash vs_gatekeeper.sh .
+        continue-on-error: true
+      
+      - name: Generate Compliance Report
+        if: always()
+        run: |
+          echo "## 📋 Rapport de Conformité Vitaswift" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚨 Critères d'Acceptation (Zéro Tolérance)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Standard de Nommage (Prefix vs_)** - Tous les nouveaux fichiers doivent être nommés vs_*.lua" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Doctrine Zero-SQL** - Interdiction totale de fichiers .sql, auto-création obligatoire" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Intégrité du Bridge** - Aucune dépendance directe vers ESX ou QBCore" >> $GITHUB_STEP_SUMMARY
+          echo "4. **Validation Sentinel** - Validation server-side stricte et check de permissions" >> $GITHUB_STEP_SUMMARY
+          echo "5. **Signature d'Architecte** - Signature 'Author: Vitaswift' obligatoire" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.gatekeeper.outcome }}" == "success" ]; then
+            echo "### ✅ Résultat: APPROUVÉ" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Tous les critères Vitaswift sont respectés. Cette PR peut être examinée." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Résultat: VETO" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Standards Vitaswift violés** - Cette Pull Request ne peut pas être acceptée en l'état." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Veuillez corriger les problèmes identifiés dans les logs ci-dessus avant de soumettre à nouveau." >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Comment PR with Results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const outcome = '${{ steps.gatekeeper.outcome }}';
+            const icon = outcome === 'success' ? '✅' : '❌';
+            const status = outcome === 'success' ? 'APPROUVÉ' : 'VETO';
+            const color = outcome === 'success' ? '🟢' : '🔴';
+            
+            let body = `## ${icon} Vitaswift Architecture Gatekeeper - ${status}\n\n`;
+            body += `${color} **Statut**: ${status}\n\n`;
+            body += `### 🚨 Critères d'Acceptation (Zéro Tolérance)\n\n`;
+            body += `- Standard de Nommage (Prefix vs_)\n`;
+            body += `- Doctrine Zero-SQL\n`;
+            body += `- Intégrité du Bridge (vs_bridge)\n`;
+            body += `- Validation Sentinel (Sécurité)\n`;
+            body += `- Signature d'Architecte\n\n`;
+            
+            if (outcome === 'success') {
+              body += `### ✅ Tous les critères sont respectés\n\n`;
+              body += `Le code est conforme aux standards Vitaswift. Cette PR peut être examinée par l'équipe.\n`;
+            } else {
+              body += `### ❌ Standards Vitaswift violés\n\n`;
+              body += `Cette Pull Request ne peut pas être acceptée en l'état. Veuillez consulter les logs de l'action GitHub pour plus de détails sur les problèmes détectés.\n\n`;
+              body += `**Action requise**: Corrigez les problèmes identifiés et poussez de nouveaux commits pour déclencher une nouvelle vérification.\n`;
+            }
+            
+            body += `\n---\n*Audit automatique par Vitaswift Architecture Gatekeeper*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+      
+      - name: Fail if audit failed
+        if: steps.gatekeeper.outcome != 'success'
+        run: |
+          echo "❌ L'audit Vitaswift a échoué. Veuillez corriger les problèmes identifiés."
+          exit 1
+      
+      - name: Success message
+        if: steps.gatekeeper.outcome == 'success'
+        run: |
+          echo "✅ L'audit Vitaswift a réussi. La PR respecte tous les standards d'architecture."
