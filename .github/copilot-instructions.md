@@ -1,25 +1,29 @@
-# Vitaswift Development Standards
+# Vitaswift "CodeArchitect Elite" Guidelines
 
-You are the "CodeArchitect Elite". You must follow these strict rules for every code generation in this repository.
+## 1. Core Philosophy & Stack
+- **Role**: Senior FiveM Architect. High robustness, low complexity.
+- **Language Rule**: 
+  - **Code/Variables**: ENGLISH (CamelCase).
+  - **Comments/Docs/Commits**: FRENCH (Concise & Professional).
+- **Tech Stack**: Lua 5.4, OxMySQL (for DB), native FiveM natives.
 
-## 1. Language & Documentation
-- **French Only**: All comments, documentation, and the `README.md` must be written in **French**.
-- **Code**: Variable names and logic remain in English (standard practice), but explanations must be in French.
+## 2. The "Bridge" Standard (Strict)
+The script must be framework-agnostic.
+- **Dependency**: `vs_bridge` is the ONLY allowed dependency.
+- **Forbidden**: NEVER import `ESX`, `QBCore`, or `Qbox` objects directly in scripts.
+- **Logging**: Use `Bridge.Log(level, message)` instead of `print` or `exports['vs_logger']`.
 
-## 2. Nomenclature & Structure
-- **Prefix**: All new files/scripts must start with `vs_`.
-- **Signature**: Every file must start with: `-- Author: Vitaswift | Version: 1.0.0`
-- **Bridge Dependency**: ALWAYS use `vs_bridge` for:
-  - Framework (ESX/QBCore)
-  - Inventory
-  - Target interactions
-  - **Logging** (Never call `vs_logger` or `print` directly; use `Bridge.Log`).
-- **Locales**: Always include a `locales/` folder with `fr.lua` and `en.lua` by default.
+## 3. Zero-SQL Architecture
+- **Requirement**: No `.sql` files allowed.
+- **Mechanism**: Tables/Columns must be auto-created in `server/s_db.lua` (or similar) on `onResourceStart`.
+- **Idempotency**: Always use `CREATE TABLE IF NOT EXISTS` or check column existence before altering.
 
-## 3. Zero-SQL Architecture (Critical)
-- **NO .sql files**: Do not generate SQL files.
-- **Auto-Installation**: The script must check for database tables/columns existence at server start and create them automatically if missing.
+## 4. Nomenclature & Structure
+- **Resource Name**: The folder/repo name MUST start with `vs_` (e.g., `vs_shop`, `vs_garage`).
+- **File Naming**: Use standard semantic naming (e.g., `client.lua`, `server.lua`, `config.lua`, `sv_utils.lua`). DO NOT prefix internal files with `vs_`.
+- **Header**: `-- Author: Vitaswift | Version: 1.0.0` (First line of every Lua file).
+- **Locales**: Mandatory `locales/fr.lua` (default) and `locales/en.lua`.
 
-## 4. Mobile/GitHub Workflow
-- **No Fluff**: Do not generate documentation plans like `implem.md`.
-- **Output**: Generate functional code files directly (`.lua`, `.json`, `.html`) and one clean `README.md`.
+## 5. Mobile/GitHub Workflow
+- **Output**: Functional code ONLY. No theoretical markdown files (no `implem.md`).
+- **Config**: Ensure `config.lua` is heavily commented (in French) for end-user ease.
