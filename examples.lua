@@ -1,16 +1,16 @@
 -- Author: Vitaswift | Version: 1.0.0
 --[[
-    vs_logger - Example Usage
+    vs_logger - Exemples d'Utilisation
     
-    This file demonstrates how to use vs_logger in your FiveM scripts.
-    Copy these examples into your server-side scripts.
+    Ce fichier démontre comment utiliser vs_logger dans vos scripts FiveM.
+    Copiez ces exemples dans vos scripts côté serveur.
 ]]
 
 -- ============================================
--- BASIC LOGGING EXAMPLES
+-- EXEMPLES DE JOURNALISATION BASIQUE
 -- ============================================
 
--- Example 1: Log a player connection
+-- Exemple 1: Enregistrer une connexion de joueur
 RegisterServerEvent('playerConnecting')
 AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
     local source = source

@@ -1,119 +1,119 @@
 # vs_logger (Sentinel Edition)
 
-**Author:** Vitaswift  
+**Auteur:** Vitaswift  
 **Version:** 1.1.0  
-**Type:** FiveM Server-Side Resource
+**Type:** Ressource Serveur FiveM
 
-Advanced logging and security monitoring system for FiveM servers with built-in anti-cheat capabilities.
+Système avancé de journalisation et de surveillance de sécurité pour les serveurs FiveM avec capacités anti-cheat intégrées.
 
-## 🌟 Features
+## 🌟 Fonctionnalités
 
-### Core Logging
-- **Zero-SQL Architecture**: Automatic database table creation - no manual setup required
-- **Multiple Log Types**: Player, Admin, Security, System, Suspect logs
-- **Discord Integration**: Dual webhook support (Standard logs + Security alerts)
-- **Grade Verification**: Integration with `vs_bridge` for permission checking
-- **Performance Optimized**: Async operations, query queuing, minimal server impact
+### Journalisation Principale
+- **Architecture Zero-SQL**: Création automatique des tables de base de données - aucune configuration manuelle requise
+- **Plusieurs Types de Logs**: Logs joueur, admin, sécurité, système et suspect
+- **Intégration Discord**: Support de webhooks doubles (Logs standards + Alertes de sécurité)
+- **Vérification de Grade**: Intégration avec `vs_bridge` pour la vérification des permissions
+- **Optimisé pour la Performance**: Opérations asynchrones, file d'attente de requêtes, impact minimal sur le serveur
 
-### Sentinel Security Module
-- **HoneyPot Events**: Trap menu executors with fake events
-- **Pattern Detection**: Identify suspicious keywords in logs
-- **Rate Limiting**: Prevent log flooding and trigger spam
-- **Smart Alerting**: No false positives - suspicious activities logged as "Suspect"
-- **Real-time Monitoring**: Immediate security alerts for critical events
+### Module de Sécurité Sentinel
+- **Événements HoneyPot**: Piéger les exécuteurs de menus avec de faux événements
+- **Détection de Motifs**: Identifier les mots-clés suspects dans les logs
+- **Limitation de Taux**: Empêcher l'inondation de logs et le spam de déclenchements
+- **Alertes Intelligentes**: Pas de faux positifs - les activités suspectes sont enregistrées comme "Suspect"
+- **Surveillance en Temps Réel**: Alertes de sécurité immédiates pour les événements critiques
 
-## 📋 Requirements
+## 📋 Prérequis
 
-- FiveM Server (Build 2802 or newer)
-- `vs_bridge` resource (for grade verification)
-- **MySQL/MariaDB database** (required for persistent storage)
-- `oxmysql` or `mysql-async` resource (for database connection)
+- Serveur FiveM (Build 2802 ou plus récent)
+- Ressource `vs_bridge` (pour la vérification des grades)
+- **Base de données MySQL/MariaDB** (requis pour le stockage persistant)
+- Ressource `oxmysql` ou `mysql-async` (pour la connexion à la base de données)
 
-**Note:** This resource uses MySQL-specific SQL syntax and requires a MySQL/MariaDB database to function properly.
+**Note:** Cette ressource utilise la syntaxe SQL spécifique à MySQL et nécessite une base de données MySQL/MariaDB pour fonctionner correctement.
 
 ## 🚀 Installation
 
-1. Download and extract to your `resources` folder
-2. Add to your `server.cfg`:
+1. Téléchargez et extrayez dans votre dossier `resources`
+2. Ajoutez à votre `server.cfg`:
 ```cfg
 ensure vs_bridge
 ensure vs_logger
 ```
 
-3. Configure webhooks in `config.lua`:
+3. Configurez les webhooks dans `config.lua`:
 ```lua
 Config.Webhooks = {
     Standard = {
         enabled = true,
-        url = "YOUR_DISCORD_WEBHOOK_URL"
+        url = "VOTRE_URL_WEBHOOK_DISCORD"
     },
     Security = {
         enabled = true,
-        url = "YOUR_SECURITY_WEBHOOK_URL"
+        url = "VOTRE_URL_WEBHOOK_SECURITE"
     }
 }
 ```
 
-4. Restart your server
+4. Redémarrez votre serveur
 
-## 💡 Usage
+## 💡 Utilisation
 
-### Basic Logging
+### Journalisation Basique
 ```lua
--- From any server-side script
-exports.vs_logger:SendLog('player', 'Player Connected', 'John Doe has joined the server', source)
+-- Depuis n'importe quel script côté serveur
+exports.vs_logger:SendLog('player', 'Joueur Connecté', 'John Doe a rejoint le serveur', source)
 
-exports.vs_logger:SendLog('admin', 'Admin Action', 'Player was kicked', source, {
-    Target = 'Player ID 5',
-    Reason = 'Rule violation'
+exports.vs_logger:SendLog('admin', 'Action Admin', 'Le joueur a été expulsé', source, {
+    Target = 'Joueur ID 5',
+    Reason = 'Violation des règles'
 })
 
-exports.vs_logger:SendLog('security', 'Security Alert', 'Suspicious activity detected', source)
+exports.vs_logger:SendLog('security', 'Alerte de Sécurité', 'Activité suspecte détectée', source)
 ```
 
-### Log Types
-- `player` - Standard player actions
-- `admin` - Admin commands and actions (requires grade 3+)
-- `security` - Critical security events (requires grade 4+)
-- `system` - System-level events
-- `suspect` - Automatically generated for suspicious activities
+### Types de Logs
+- `player` - Actions standard des joueurs
+- `admin` - Commandes et actions admin (nécessite grade 3+)
+- `security` - Événements de sécurité critiques (nécessite grade 4+)
+- `system` - Événements au niveau système
+- `suspect` - Généré automatiquement pour les activités suspectes
 
-### Available Exports
+### Exports Disponibles
 
 #### SendLog
 ```lua
 exports.vs_logger:SendLog(logType, title, message, source, metadata)
 ```
-- **logType**: string - Type of log (player, admin, security, system, suspect)
-- **title**: string - Log title
-- **message**: string - Log message/description
-- **source**: number - Player source (optional)
-- **metadata**: table - Additional key-value data (optional)
+- **logType**: string - Type de log (player, admin, security, system, suspect)
+- **title**: string - Titre du log
+- **message**: string - Message/description du log
+- **source**: number - Source du joueur (optionnel)
+- **metadata**: table - Données clé-valeur supplémentaires (optionnel)
 
 #### CheckSuspiciousPatterns
 ```lua
 local score, keywords = exports.vs_logger:CheckSuspiciousPatterns(text)
 ```
-- **text**: string - Text to analyze
-- Returns: score (number), keywords (table)
+- **text**: string - Texte à analyser
+- Retourne: score (number), keywords (table)
 
 #### GetSuspiciousPlayerStats
 ```lua
 local stats = exports.vs_logger:GetSuspiciousPlayerStats(identifier)
 ```
-- **identifier**: string - Player license identifier
-- Returns: table with detection statistics
+- **identifier**: string - Identifiant de licence du joueur
+- Retourne: table avec statistiques de détection
 
 #### GetSentinelStatus
 ```lua
 local status = exports.vs_logger:GetSentinelStatus()
 ```
-- Returns: table with sentinel module status
+- Retourne: table avec statut du module sentinel
 
-## 🔒 Security Features
+## 🔒 Fonctionnalités de Sécurité
 
-### HoneyPot Events
-The following fake events are registered to trap menu executors:
+### Événements HoneyPot
+Les faux événements suivants sont enregistrés pour piéger les exécuteurs de menus:
 - `vs_logger:giveAllWeapons`
 - `vs_logger:addMoney`
 - `vs_logger:teleportToCoords`
@@ -123,36 +123,36 @@ The following fake events are registered to trap menu executors:
 - `vs_logger:nukeServer`
 - `vs_logger:bypassAnticheat`
 
-**Any trigger of these events results in immediate security alert!**
+**Tout déclenchement de ces événements entraîne une alerte de sécurité immédiate!**
 
-### Pattern Detection
-Automatically scans log messages for suspicious keywords:
+### Détection de Motifs
+Scanne automatiquement les messages de log pour détecter les mots-clés suspects:
 - **Cheats**: aimbot, wallhack, ESP, etc.
 - **Menus**: Eulen, Lynx, RedEngine, etc.
 - **Exploits**: injection, bypass, etc.
-- **Suspicious Actions**: money drop, spawn vehicle, etc.
+- **Actions Suspectes**: money drop, spawn vehicle, etc.
 
-### Rate Limiting
-- Default: 30 requests per minute per player
-- Automatic cooldown after limit exceeded
-- Security alerts after repeated violations
-- Whitelist support for trusted identifiers
+### Limitation de Taux
+- Par défaut: 30 requêtes par minute par joueur
+- Cooldown automatique après dépassement de la limite
+- Alertes de sécurité après violations répétées
+- Support de liste blanche pour les identifiants de confiance
 
-## 🎮 Admin Commands
+## 🎮 Commandes Admin
 
 ### /vs_suspicious
-View all players flagged with suspicious activity
-- Shows detection count and timestamps
-- Requires admin grade (3+)
+Voir tous les joueurs signalés avec activité suspecte
+- Affiche le nombre de détections et les horodatages
+- Nécessite grade admin (3+)
 
 ### /vs_honeypot
-View all honeypot event triggers
-- Shows triggered events and timestamps
-- Requires admin grade (3+)
+Voir tous les déclenchements d'événements honeypot
+- Affiche les événements déclenchés et les horodatages
+- Nécessite grade admin (3+)
 
 ## ⚙️ Configuration
 
-### Rate Limiting
+### Limitation de Taux
 ```lua
 Config.RateLimit = {
     enabled = true,
@@ -162,7 +162,7 @@ Config.RateLimit = {
 }
 ```
 
-### Pattern Sensitivity
+### Sensibilité des Motifs
 ```lua
 Config.Sentinel.patterns = {
     enabled = true,
@@ -175,7 +175,7 @@ Config.Sentinel.patterns = {
 }
 ```
 
-### Performance Tuning
+### Réglage de Performance
 ```lua
 Config.Performance = {
     asyncDatabase = true,
@@ -183,145 +183,120 @@ Config.Performance = {
 }
 ```
 
-## 🔧 Advanced Configuration
+## 🔧 Configuration Avancée
 
-### Custom HoneyPot Events
-Add custom fake events in `config.lua`:
+### Événements HoneyPot Personnalisés
+Ajoutez des événements factices personnalisés dans `config.lua`:
 ```lua
 Config.Sentinel.honeyPotEvents = {
     "vs_logger:giveAllWeapons",
-    "your_custom_event",
-    -- Add more...
+    "votre_evenement_personnalise",
+    -- Ajoutez-en plus...
 }
 ```
 
-### Custom Suspicious Keywords
-Add custom keywords to detect:
+### Mots-clés Suspects Personnalisés
+Ajoutez des mots-clés personnalisés à détecter:
 ```lua
 Config.Sentinel.patterns.keywords.custom = {
-    "your_keyword",
-    "another_keyword"
+    "votre_mot_cle",
+    "autre_mot_cle"
 }
 ```
 
-### Webhook Customization
+### Personnalisation des Webhooks
 ```lua
 Config.Webhooks.Standard.colors = {
-    info = 3447003,    -- Blue
-    success = 3066993, -- Green
+    info = 3447003,    -- Bleu
+    success = 3066993, -- Vert
     warning = 15844367, -- Orange
-    error = 15158332   -- Red
+    error = 15158332   -- Rouge
 }
 ```
 
-## 📊 How It Works
+## 📊 Comment Ça Marche
 
-### Zero-SQL Philosophy
-1. Script starts and checks for database tables
-2. If tables don't exist, they're created automatically
-3. No manual SQL execution needed
-4. Seamless integration with MySQL/oxmysql
+### Philosophie Zero-SQL
+1. Le script démarre et vérifie les tables de base de données
+2. Si les tables n'existent pas, elles sont créées automatiquement
+3. Aucune exécution SQL manuelle nécessaire
+4. Intégration transparente avec MySQL/oxmysql
 
-### Grade Verification Flow
-1. Log request received with sensitive log type
-2. System checks player grade via `vs_bridge`
-3. If unauthorized, security alert is triggered
-4. Legitimate request proceeds normally
+### Flux de Vérification de Grade
+1. Demande de log reçue avec type de log sensible
+2. Le système vérifie le grade du joueur via `vs_bridge`
+3. Si non autorisé, une alerte de sécurité est déclenchée
+4. La demande légitime se poursuit normalement
 
-### HoneyPot Detection
-1. Fake events registered on server start
-2. Menu executor triggers fake event
-3. Immediate detection and logging
-4. Security alert sent to Discord
-5. Player flagged for manual review
+### Détection HoneyPot
+1. Faux événements enregistrés au démarrage du serveur
+2. L'exécuteur de menu déclenche un faux événement
+3. Détection et journalisation immédiates
+4. Alerte de sécurité envoyée à Discord
+5. Joueur signalé pour révision manuelle
 
-### Pattern Detection
-1. Every log message is scanned
-2. Keywords matched against configured patterns
-3. Score calculated based on matches
-4. Threshold checked against sensitivity
-5. Multiple detections trigger suspect alert
+### Détection de Motifs
+1. Chaque message de log est scanné
+2. Mots-clés comparés aux motifs configurés
+3. Score calculé en fonction des correspondances
+4. Seuil vérifié par rapport à la sensibilité
+5. Plusieurs détections déclenchent une alerte suspect
 
-## 🛡️ False Positive Prevention
+## 🛡️ Prévention des Faux Positifs
 
-The system is designed to **NEVER auto-ban or auto-kick**:
-- Suspicious activities logged as "Suspect" status
-- Manual review recommended for all alerts
-- Multiple detections required before alerting
-- Clear distinction between confirmed and suspected issues
-- Admin commands for investigating flagged players
+Le système est conçu pour **NE JAMAIS bannir ou expulser automatiquement**:
+- Les activités suspectes sont enregistrées avec le statut "Suspect"
+- Révision manuelle recommandée pour toutes les alertes
+- Plusieurs détections requises avant l'alerte
+- Distinction claire entre problèmes confirmés et suspectés
+- Commandes admin pour enquêter sur les joueurs signalés
 
-## 📝 Events
+## 📝 Événements
 
-### Server Events (Internal)
-- `vs_sentinel:honeyPotTriggered` - When honeypot event is triggered
-- `vs_sentinel:patternDetected` - When suspicious pattern is detected
-- `vs_sentinel:logSuspicious` - General suspicious activity logging
-- `vs_sentinel:clearPlayerData` - Clear suspicious player data (admin only)
+### Événements Serveur (Internes)
+- `vs_sentinel:honeyPotTriggered` - Quand un événement honeypot est déclenché
+- `vs_sentinel:patternDetected` - Quand un motif suspect est détecté
+- `vs_sentinel:logSuspicious` - Journalisation générale d'activité suspecte
+- `vs_sentinel:clearPlayerData` - Effacer les données de joueur suspect (admin uniquement)
 
-## 🔍 Troubleshooting
+## 🔍 Dépannage
 
-### Logs not appearing in Discord
-- Check webhook URLs in `config.lua`
-- Verify webhook URLs are valid
-- Check server console for error messages
-- Enable debug mode: `Config.Debug = true`
+### Les logs n'apparaissent pas dans Discord
+- Vérifiez les URL de webhook dans `config.lua`
+- Vérifiez que les URL de webhook sont valides
+- Consultez la console du serveur pour les messages d'erreur
+- Activez le mode debug: `Config.Debug = true`
 
-### vs_bridge errors
-- Ensure `vs_bridge` resource is started before `vs_logger`
-- Check `Config.UseBridge` is set to `true`
-- Verify `Config.BridgeName` matches your bridge resource name
+### Erreurs vs_bridge
+- Assurez-vous que la ressource `vs_bridge` est démarrée avant `vs_logger`
+- Vérifiez que `Config.UseBridge` est défini sur `true`
+- Vérifiez que `Config.BridgeName` correspond au nom de votre ressource bridge
 
-### Rate limiting too strict
-- Adjust `Config.RateLimit.maxRequestsPerMinute`
-- Add trusted identifiers to whitelist
-- Disable rate limiting: `Config.RateLimit.enabled = false`
+### Limitation de taux trop stricte
+- Ajustez `Config.RateLimit.maxRequestsPerMinute`
+- Ajoutez des identifiants de confiance à la liste blanche
+- Désactivez la limitation de taux: `Config.RateLimit.enabled = false`
 
-## 📄 License
+## 📄 Licence
 
-This resource is part of the Vitaswift ecosystem.
+Cette ressource fait partie de l'écosystème Vitaswift.
 
 ## 🤝 Support
 
-For issues, questions, or contributions:
-- Check the configuration options in `config.lua`
-- Enable debug mode for verbose logging
-- Review console output for errors
-- Check `.github/copilot-instructions.md` for development standards
+Pour les problèmes, questions ou contributions:
+- Vérifiez les options de configuration dans `config.lua`
+- Activez le mode debug pour une journalisation détaillée
+- Consultez la sortie de la console pour les erreurs
+- Consultez `.github/copilot-instructions.md` pour les standards de développement
 
-## 🛡️ Vitaswift Architecture Gatekeeper
+## 🎯 Feuille de Route
 
-Ce repository inclut le **Vitaswift Architecture Gatekeeper** - un outil d'audit automatique qui garantit la conformité aux standards Vitaswift.
-
-### Critères de Validation (Zéro Tolérance)
-
-Le Gatekeeper vérifie automatiquement :
-
-1. ✅ **Standard de Nommage** - Tous les fichiers commencent par `vs_`
-2. ✅ **Doctrine Zero-SQL** - Pas de fichiers .sql, auto-création obligatoire
-3. ✅ **Intégrité du Bridge** - Utilisation exclusive de `vs_bridge`
-4. ✅ **Validation Sentinel** - Sécurité server-side stricte
-5. ✅ **Signature d'Architecte** - Header `Author: Vitaswift` obligatoire
-
-### Utilisation
-
-```bash
-# Audit local du projet
-./vs_gatekeeper.sh .
-
-# Le Gatekeeper s'exécute automatiquement sur chaque Pull Request
-```
-
-**Documentation complète:** Consultez [GATEKEEPER.md](GATEKEEPER.md) pour plus de détails.
-
-## 🎯 Roadmap
-
-- [ ] Web dashboard for log viewing
-- [ ] Advanced AI-based pattern detection
-- [ ] Integration with more framework bridges
-- [ ] Automatic threat scoring system
-- [ ] Historical data analysis tools
+- [ ] Tableau de bord web pour visualiser les logs
+- [ ] Détection de motifs avancée basée sur l'IA
+- [ ] Intégration avec plus de bridges de framework
+- [ ] Système de notation automatique des menaces
+- [ ] Outils d'analyse des données historiques
 
 ---
 
-**Remember:** This is a security tool - configure it properly and review alerts regularly!
+**Rappel:** Ceci est un outil de sécurité - configurez-le correctement et examinez régulièrement les alertes!

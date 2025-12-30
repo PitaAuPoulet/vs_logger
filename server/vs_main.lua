@@ -1,28 +1,27 @@
 --[[
-    vs_logger - Main Server Logic
-    Author: Vitaswift
-    Version: 1.1.0
+    vs_logger - Logique Serveur Principale
+    Author: Vitaswift | Version: 1.0.0
     
-    Core logging functionality with Zero-SQL database management
+    Fonctionnalité de journalisation principale avec gestion de base de données Zero-SQL
 ]]
 
 local rateLimitTracker = {}
 local queryQueue = {}
 local activeQueries = 0
 
--- Initialize Database (Zero-SQL approach)
--- NOTE: Requires MySQL/MariaDB database (uses MySQL-specific syntax)
+-- Initialiser la base de données (approche Zero-SQL)
+-- NOTE: Nécessite MySQL/MariaDB (utilise la syntaxe MySQL spécifique)
 local function InitializeDatabase()
     if Config.Debug then
-        print("^3[vs_logger]^7 Initializing Zero-SQL database...")
+        VsLog('info', _L('db_initializing'))
     end
     
-    -- For FiveM, we use Zero-SQL approach with MySQL/MariaDB
-    -- Requires oxmysql or mysql-async resource
-    -- Tables are created automatically on first run (Zero-SQL)
+    -- Pour FiveM, nous utilisons l'approche Zero-SQL avec MySQL/MariaDB
+    -- Nécessite oxmysql ou mysql-async
+    -- Les tables sont créées automatiquement au premier démarrage (Zero-SQL)
     
     CreateThread(function()
-        -- Create logs table structure (MySQL/MariaDB syntax)
+        -- Créer la structure de la table logs (syntaxe MySQL/MariaDB)
         local createTableQuery = [[
             CREATE TABLE IF NOT EXISTS vs_logs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,32 +40,32 @@ local function InitializeDatabase()
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ]]
         
-        -- Execute table creation using oxmysql or mysql-async
-        -- Note: pcall only catches Lua errors, not SQL execution errors
-        -- For production, consider adding callback/promise handling if needed
+        -- Exécuter la création de table avec oxmysql ou mysql-async
+        -- Note: pcall capture seulement les erreurs Lua, pas les erreurs SQL
+        -- Pour la production, considérer l'ajout de gestion callback/promise si nécessaire
         local success = pcall(function()
             if GetResourceState('oxmysql') == 'started' then
                 exports.oxmysql:execute(createTableQuery)
             elseif GetResourceState('mysql-async') == 'started' then
                 exports['mysql-async']:mysql_execute(createTableQuery)
             else
-                print("^1[vs_logger]^7 WARNING: No MySQL resource found (oxmysql or mysql-async required)")
+                VsLog('warning', _L('db_no_mysql'))
             end
         end)
         
         if success then
             if Config.Debug then
-                print("^2[vs_logger]^7 Database tables initialized successfully!")
+                VsLog('success', _L('db_initialized'))
             end
         else
-            print("^1[vs_logger]^7 ERROR: Failed to initialize database tables")
+            VsLog('error', _L('db_error'))
         end
     end)
     
     return true
 end
 
--- Rate Limiter
+-- Limiteur de taux
 local function CheckRateLimit(source)
     if not Config.RateLimit.enabled then
         return true
@@ -74,7 +73,7 @@ local function CheckRateLimit(source)
     
     local identifier = GetPlayerIdentifierByType(source, "license") or tostring(source)
     
-    -- Check whitelist
+    -- Vérifier la liste blanche
     for _, whitelisted in ipairs(Config.RateLimit.whitelist) do
         if identifier == whitelisted then
             return true
@@ -83,7 +82,7 @@ local function CheckRateLimit(source)
     
     local currentTime = os.time()
     
-    -- Initialize tracker for this player
+    -- Initialiser le suivi pour ce joueur
     if not rateLimitTracker[identifier] then
         rateLimitTracker[identifier] = {
             requests = {},
@@ -94,15 +93,15 @@ local function CheckRateLimit(source)
     
     local tracker = rateLimitTracker[identifier]
     
-    -- Check if in cooldown
+    -- Vérifier si en cooldown
     if tracker.cooldownUntil > currentTime then
         if Config.Debug then
-            print(string.format("^3[vs_logger]^7 Rate limit cooldown active for %s", identifier))
+            VsLog('warning', _L('ratelimit_cooldown', identifier))
         end
         return false
     end
     
-    -- Clean old requests (older than 1 minute)
+    -- Nettoyer les anciennes requêtes (plus de 1 minute)
     local validRequests = {}
     for _, timestamp in ipairs(tracker.requests) do
         if currentTime - timestamp < 60 then
@@ -111,12 +110,12 @@ local function CheckRateLimit(source)
     end
     tracker.requests = validRequests
     
-    -- Check if limit exceeded
+    -- Vérifier si la limite est dépassée
     if #tracker.requests >= Config.RateLimit.maxRequestsPerMinute then
         tracker.violations = tracker.violations + 1
         tracker.cooldownUntil = currentTime + Config.RateLimit.cooldownAfterLimit
         
-        -- Send security alert if threshold reached
+        -- Envoyer une alerte de sécurité si le seuil est atteint
         if tracker.violations >= Config.RateLimit.alertAfterViolations then
             TriggerEvent('vs_sentinel:logSuspicious', {
                 source = source,
@@ -128,22 +127,21 @@ local function CheckRateLimit(source)
         end
         
         if Config.Debug then
-            print(string.format("^1[vs_logger]^7 Rate limit exceeded for %s (violations: %d)", 
-                identifier, tracker.violations))
+            VsLog('error', _L('ratelimit_exceeded', identifier, tracker.violations))
         end
         
         return false
     end
     
-    -- Add current request
+    -- Ajouter la requête actuelle
     table.insert(tracker.requests, currentTime)
     return true
 end
 
--- Verify player grade via vs_bridge
+-- Vérifier le grade du joueur via vs_bridge
 local function VerifyPlayerGrade(source, requiredGrade)
     if not Config.UseBridge then
-        return true -- Bypass if bridge is disabled
+        return true -- Contourner si le bridge est désactivé
     end
     
     local success, grade = pcall(function()
@@ -151,14 +149,14 @@ local function VerifyPlayerGrade(source, requiredGrade)
     end)
     
     if not success then
-        print("^1[vs_logger]^7 Error: vs_bridge not available or GetPlayerGrade failed")
+        VsLog('error', _L('bridge_error'))
         return false
     end
     
     return grade and grade >= requiredGrade
 end
 
--- Format Discord Embed
+-- Formater l'embed Discord
 local function FormatDiscordEmbed(logData, webhookType)
     local webhookConfig = Config.Webhooks[webhookType]
     if not webhookConfig or not webhookConfig.enabled then
@@ -219,11 +217,11 @@ local function FormatDiscordEmbed(logData, webhookType)
     return payload
 end
 
--- Send to Discord Webhook
+-- Envoyer au webhook Discord
 local function SendToWebhook(webhookUrl, payload)
     if not webhookUrl or webhookUrl == "" then
         if Config.Debug then
-            print("^3[vs_logger]^7 Webhook URL not configured, skipping Discord notification")
+            VsLog('warning', _L('webhook_not_configured'))
         end
         return
     end
@@ -231,9 +229,9 @@ local function SendToWebhook(webhookUrl, payload)
     PerformHttpRequest(webhookUrl, function(statusCode, responseText, headers)
         if Config.Debug then
             if statusCode == 204 or statusCode == 200 then
-                print("^2[vs_logger]^7 Successfully sent to Discord webhook")
+                VsLog('success', _L('webhook_success'))
             else
-                print(string.format("^1[vs_logger]^7 Discord webhook error: %d - %s", statusCode, responseText))
+                VsLog('error', _L('webhook_error', statusCode, responseText))
             end
         end
     end, 'POST', json.encode(payload), {
@@ -241,7 +239,7 @@ local function SendToWebhook(webhookUrl, payload)
     })
 end
 
--- Save to Database (Zero-SQL)
+-- Sauvegarder dans la base de données (Zero-SQL)
 local function SaveToDatabase(logData)
     if activeQueries >= Config.Performance.maxConcurrentQueries then
         table.insert(queryQueue, logData)
@@ -251,7 +249,7 @@ local function SaveToDatabase(logData)
     activeQueries = activeQueries + 1
     
     CreateThread(function()
-        -- Insert log into MySQL database
+        -- Insérer le log dans MySQL
         local success = pcall(function()
             local metadataJson = logData.metadata and json.encode(logData.metadata) or '{}'
             
@@ -281,17 +279,15 @@ local function SaveToDatabase(logData)
         
         if Config.Debug then
             if success then
-                print(string.format("^2[vs_logger]^7 Saved log to database: %s - %s", 
-                    logData.log_type, logData.title))
+                VsLog('success', _L('db_saved', logData.log_type, logData.title))
             else
-                print(string.format("^1[vs_logger]^7 Failed to save log to database: %s - %s", 
-                    logData.log_type, logData.title))
+                VsLog('error', _L('db_save_failed', logData.log_type, logData.title))
             end
         end
         
         activeQueries = activeQueries - 1
         
-        -- Process queue if there are pending logs
+        -- Traiter la file d'attente s'il y a des logs en attente
         if #queryQueue > 0 and activeQueries < Config.Performance.maxConcurrentQueries then
             local nextLog = table.remove(queryQueue, 1)
             SaveToDatabase(nextLog)
@@ -299,36 +295,36 @@ local function SaveToDatabase(logData)
     end)
 end
 
--- Main Export: SendLog
+-- Export principal: SendLog
 function SendLog(logType, title, message, source, metadata)
-    -- Validate log type
+    -- Valider le type de log
     local logConfig = Config.LogTypes[logType]
     if not logConfig then
-        print(string.format("^1[vs_logger]^7 Invalid log type: %s", tostring(logType)))
+        VsLog('error', _L('log_invalid_type', tostring(logType)))
         return false
     end
     
     if not logConfig.enabled then
         if Config.Debug then
-            print(string.format("^3[vs_logger]^7 Log type '%s' is disabled", logType))
+            VsLog('warning', _L('log_disabled', logType))
         end
         return false
     end
     
-    -- Check rate limit if source is provided
+    -- Vérifier la limitation de taux si une source est fournie
     if source then
         if not CheckRateLimit(source) then
-            print(string.format("^1[vs_logger]^7 Rate limit exceeded for source %d", source))
+            VsLog('error', _L('log_ratelimit', source))
             return false
         end
     end
     
-    -- Grade verification for privileged log types
+    -- Vérification du grade pour les types de logs privilégiés
     if logConfig.requiresGrade and source then
         local hasPermission = VerifyPlayerGrade(source, logConfig.requiresGrade)
         
         if not hasPermission then
-            -- Security alert: unauthorized access attempt
+            -- Alerte de sécurité: tentative d'accès non autorisé
             TriggerEvent('vs_sentinel:logSuspicious', {
                 source = source,
                 identifier = GetPlayerIdentifierByType(source, "license"),
@@ -337,12 +333,12 @@ function SendLog(logType, title, message, source, metadata)
                     logType, logConfig.requiresGrade)
             })
             
-            print(string.format("^1[vs_logger]^7 Unauthorized log attempt by source %d for type '%s'", source, logType))
+            VsLog('error', _L('log_unauthorized', source, logType))
             return false
         end
     end
     
-    -- Prepare log data
+    -- Préparer les données du log
     local logData = {
         timestamp = os.time(),
         log_type = logType,
@@ -353,15 +349,15 @@ function SendLog(logType, title, message, source, metadata)
         metadata = metadata or {}
     }
     
-    -- Add player information if source provided
+    -- Ajouter les informations du joueur si une source est fournie
     if source then
         logData.playerName = GetPlayerName(source)
         logData.identifier = GetPlayerIdentifierByType(source, "license")
     end
     
-    -- Check for suspicious patterns in message
+    -- Vérifier les motifs suspects dans le message
     if Config.Sentinel.enabled and Config.Sentinel.patterns.enabled then
-        -- Will be handled by vs_sentinel module after logging
+        -- Sera géré par le module vs_sentinel après la journalisation
         TriggerEvent('vs_sentinel:checkPatterns', {
             source = source,
             message = message,
@@ -369,12 +365,12 @@ function SendLog(logType, title, message, source, metadata)
         })
     end
     
-    -- Save to database
+    -- Sauvegarder dans la base de données
     if Config.Performance.asyncDatabase then
         SaveToDatabase(logData)
     end
     
-    -- Send to Discord webhook
+    -- Envoyer au webhook Discord
     local webhookType = logConfig.webhook or "Standard"
     local embedPayload = FormatDiscordEmbed(logData, webhookType)
     
@@ -386,57 +382,57 @@ function SendLog(logType, title, message, source, metadata)
     return true
 end
 
--- Export function
+-- Exporter la fonction
 exports('SendLog', SendLog)
 
--- Initialize on resource start
+-- Initialiser au démarrage de la ressource
 CreateThread(function()
-    Wait(1000) -- Wait for other resources to load
+    Wait(1000) -- Attendre le chargement des autres ressources
     
     print("^2========================================^7")
-    print("^2[vs_logger]^7 Sentinel Edition")
-    print("^2[vs_logger]^7 Author: " .. Config.Author)
-    print("^2[vs_logger]^7 Version: " .. Config.Version)
+    VsLog('success', _L('system_starting'))
+    VsLog('info', _L('system_author', Config.Author))
+    VsLog('info', _L('system_version', Config.Version))
     print("^2========================================^7")
     
     InitializeDatabase()
     
-    -- Initialize Sentinel
+    -- Initialiser Sentinel
     if Config.Sentinel.enabled then
-        print("^2[vs_logger]^7 Sentinel security module: ^2ENABLED^7")
+        VsLog('success', _L('sentinel_enabled'))
     end
     
-    print("^2[vs_logger]^7 Logger system ready!")
+    VsLog('success', _L('system_ready'))
 end)
 
--- Cleanup on resource stop
+-- Nettoyage à l'arrêt de la ressource
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then
         return
     end
     
-    -- Process remaining queue before stopping
+    -- Traiter la file d'attente restante avant l'arrêt
     if #queryQueue > 0 then
-        print(string.format("^3[vs_logger]^7 Processing %d remaining logs before shutdown...", #queryQueue))
+        VsLog('warning', _L('db_processing_queue', #queryQueue))
         
-        -- Process all queued logs
+        -- Traiter tous les logs en file d'attente
         local processed = 0
-        while #queryQueue > 0 and processed < 100 do -- Limit to 100 for safety
+        while #queryQueue > 0 and processed < 100 do -- Limiter à 100 par sécurité
             local logData = table.remove(queryQueue, 1)
             SaveToDatabase(logData)
             processed = processed + 1
-            Wait(50) -- Small delay between operations
+            Wait(50) -- Petit délai entre les opérations
         end
         
-        -- Wait for active queries to complete
+        -- Attendre que les requêtes actives se terminent
         local waitTime = 0
         while activeQueries > 0 and waitTime < 5000 do
             Wait(100)
             waitTime = waitTime + 100
         end
         
-        print(string.format("^2[vs_logger]^7 Processed %d queued logs", processed))
+        VsLog('success', _L('db_processed', processed))
     end
     
-    print("^3[vs_logger]^7 Logger system stopped")
+    VsLog('warning', _L('system_stopped'))
 end)

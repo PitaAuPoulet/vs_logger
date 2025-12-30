@@ -1,28 +1,27 @@
 --[[
-    vs_logger - Sentinel Security Module
-    Author: Vitaswift
-    Version: 1.1.0
+    vs_logger - Module de Sécurité Sentinel
+    Author: Vitaswift | Version: 1.0.0
     
-    Advanced security monitoring with HoneyPot events and pattern detection
+    Surveillance de sécurité avancée avec événements HoneyPot et détection de motifs
 ]]
 
 local suspiciousPlayers = {}
 local honeyPotTriggers = {}
 
--- Counters for performance (avoid iterating tables)
+-- Compteurs pour la performance (éviter d'itérer sur les tables)
 local suspiciousPlayersCount = 0
 local honeyPotTriggersCount = 0
 
--- Resource state flag
+-- Drapeau d'état de la ressource
 local isResourceStopping = false
 
--- Initialize HoneyPot Events
+-- Initialiser les événements HoneyPot
 local function InitializeHoneyPots()
     if not Config.Sentinel.enabled then
         return
     end
     
-    print("^2[vs_sentinel]^7 Initializing HoneyPot events...")
+    VsLog('info', _L('sentinel_initializing'))
     
     for _, eventName in ipairs(Config.Sentinel.honeyPotEvents) do
         RegisterServerEvent(eventName)
@@ -30,26 +29,25 @@ local function InitializeHoneyPots()
             local source = source
             local args = {...}
             
-            -- This event should NEVER be triggered legitimately
+            -- Cet événement ne devrait JAMAIS être déclenché légitimement
             local identifier = GetPlayerIdentifierByType(source, "license")
             local playerName = GetPlayerName(source)
             
-            -- Log the trigger
+            -- Enregistrer le déclenchement
             LogHoneyPotTrigger(source, identifier, playerName, eventName, args)
             
             if Config.Debug then
-                print(string.format("^1[vs_sentinel]^7 HoneyPot triggered: %s by %s [%d]", 
-                    eventName, playerName, source))
+                VsLog('error', _L('sentinel_honeypot_triggered', eventName, playerName, source))
             end
         end)
     end
     
-    print(string.format("^2[vs_sentinel]^7 %d HoneyPot events registered", #Config.Sentinel.honeyPotEvents))
+    VsLog('success', _L('sentinel_honeypots_registered', #Config.Sentinel.honeyPotEvents))
 end
 
--- Log HoneyPot Trigger
+-- Enregistrer le déclenchement d'un HoneyPot
 function LogHoneyPotTrigger(source, identifier, playerName, eventName, args)
-    -- Track triggers for this player
+    -- Suivre les déclenchements pour ce joueur
     if not honeyPotTriggers[identifier] then
         honeyPotTriggers[identifier] = {}
         honeyPotTriggersCount = honeyPotTriggersCount + 1
@@ -61,16 +59,16 @@ function LogHoneyPotTrigger(source, identifier, playerName, eventName, args)
         args = args
     })
     
-    -- Send immediate security alert
+    -- Envoyer une alerte de sécurité immédiate
     local details = string.format(
-        "**CRITICAL: HoneyPot Event Triggered**\n\n" ..
-        "🎯 **Event:** `%s`\n" ..
-        "👤 **Player:** %s [%d]\n" ..
-        "🔑 **Identifier:** %s\n" ..
-        "📊 **Total Triggers:** %d\n" ..
-        "⏰ **Timestamp:** %s\n\n" ..
-        "⚠️ **This event should never be triggered by legitimate gameplay!**\n" ..
-        "This indicates the player is using a menu or executing unauthorized scripts.",
+        "**CRITIQUE: Événement HoneyPot Déclenché**\n\n" ..
+        "🎯 **Événement:** `%s`\n" ..
+        "👤 **Joueur:** %s [%d]\n" ..
+        "🔑 **Identifiant:** %s\n" ..
+        "📊 **Déclenchements Totaux:** %d\n" ..
+        "⏰ **Horodatage:** %s\n\n" ..
+        "⚠️ **Cet événement ne devrait jamais être déclenché par un gameplay légitime!**\n" ..
+        "Cela indique que le joueur utilise un menu ou exécute des scripts non autorisés.",
         eventName,
         playerName,
         source,
@@ -79,10 +77,10 @@ function LogHoneyPotTrigger(source, identifier, playerName, eventName, args)
         os.date("%Y-%m-%d %H:%M:%S")
     )
     
-    -- Send via main logger
+    -- Envoyer via le logger principal
     exports.vs_logger:SendLog(
         "suspect",
-        "🚨 HoneyPot Event Triggered",
+        "🚨 Événement HoneyPot Déclenché",
         details,
         source,
         {
@@ -92,7 +90,7 @@ function LogHoneyPotTrigger(source, identifier, playerName, eventName, args)
         }
     )
     
-    -- Also trigger internal event for other systems to react
+    -- Déclencher également un événement interne pour d'autres systèmes
     TriggerEvent('vs_sentinel:honeyPotTriggered', {
         source = source,
         identifier = identifier,
@@ -102,7 +100,7 @@ function LogHoneyPotTrigger(source, identifier, playerName, eventName, args)
     })
 end
 
--- Check Suspicious Patterns
+-- Vérifier les motifs suspects
 function CheckSuspiciousPatterns(text)
     if not Config.Sentinel.patterns.enabled or not text then
         return 0, {}
@@ -112,12 +110,12 @@ function CheckSuspiciousPatterns(text)
     local matchCount = 0
     local matchedKeywords = {}
     
-    -- Check all pattern categories
+    -- Vérifier toutes les catégories de motifs
     for category, keywords in pairs(Config.Sentinel.patterns.keywords) do
         for _, keyword in ipairs(keywords) do
             local keyword_lower = string.lower(keyword)
             
-            -- Check if keyword exists in text
+            -- Vérifier si le mot-clé existe dans le texte
             if string.find(text_lower, keyword_lower, 1, true) then
                 matchCount = matchCount + 1
                 table.insert(matchedKeywords, {
@@ -126,14 +124,13 @@ function CheckSuspiciousPatterns(text)
                 })
                 
                 if Config.Debug then
-                    print(string.format("^3[vs_sentinel]^7 Suspicious keyword detected: %s (category: %s)", 
-                        keyword, category))
+                    VsLog('warning', _L('sentinel_keyword_detected', keyword, category))
                 end
             end
         end
     end
     
-    -- Check against threshold
+    -- Vérifier par rapport au seuil
     local sensitivity = Config.Sentinel.patterns.sensitivity
     local threshold = Config.Sentinel.patterns.thresholds[sensitivity] or 2
     
@@ -144,10 +141,10 @@ function CheckSuspiciousPatterns(text)
     return 0, {}
 end
 
--- Export pattern checking function
+-- Exporter la fonction de vérification de motifs
 exports('CheckSuspiciousPatterns', CheckSuspiciousPatterns)
 
--- Handle pattern checking request
+-- Gérer la demande de vérification de motifs
 RegisterServerEvent('vs_sentinel:checkPatterns')
 AddEventHandler('vs_sentinel:checkPatterns', function(data)
     local suspiciousScore, matchedKeywords = CheckSuspiciousPatterns(data.message)
@@ -162,13 +159,13 @@ AddEventHandler('vs_sentinel:checkPatterns', function(data)
     end
 end)
 
--- Handle pattern detection events
+-- Gérer les événements de détection de motifs
 RegisterServerEvent('vs_sentinel:patternDetected')
 AddEventHandler('vs_sentinel:patternDetected', function(data)
     local source = data.source
     local identifier = GetPlayerIdentifierByType(source, "license")
     
-    -- Track suspicious activity
+    -- Suivre l'activité suspecte
     if not suspiciousPlayers[identifier] then
         suspiciousPlayers[identifier] = {
             detections = 0,
@@ -188,19 +185,19 @@ AddEventHandler('vs_sentinel:patternDetected', function(data)
         log_type = data.original_log_type
     })
     
-    -- Only send alert if multiple detections (avoid false positives)
+    -- Envoyer une alerte seulement si plusieurs détections (éviter les faux positifs)
     if playerData.detections >= 2 then
         local playerName = GetPlayerName(source)
         
         local details = string.format(
-            "**Suspicious Pattern Detected**\n\n" ..
-            "👤 **Player:** %s [%d]\n" ..
-            "🔑 **Identifier:** %s\n" ..
-            "📊 **Detection Count:** %d\n" ..
-            "🎯 **Pattern Score:** %d\n" ..
-            "📝 **Message Sample:** ```%s```\n" ..
-            "⏰ **First Detection:** %s\n\n" ..
-            "⚠️ **Status:** SUSPECT (Manual review recommended)",
+            "**Motif Suspect Détecté**\n\n" ..
+            "👤 **Joueur:** %s [%d]\n" ..
+            "🔑 **Identifiant:** %s\n" ..
+            "📊 **Nombre de Détections:** %d\n" ..
+            "🎯 **Score du Motif:** %d\n" ..
+            "📝 **Échantillon de Message:** ```%s```\n" ..
+            "⏰ **Première Détection:** %s\n\n" ..
+            "⚠️ **Statut:** SUSPECT (Révision manuelle recommandée)",
             playerName,
             source,
             identifier,
@@ -210,10 +207,10 @@ AddEventHandler('vs_sentinel:patternDetected', function(data)
             os.date("%Y-%m-%d %H:%M:%S", playerData.firstDetection)
         )
         
-        -- Log as suspect (not confirmed cheat - avoiding false positives)
+        -- Enregistrer comme suspect (pas de triche confirmée - éviter les faux positifs)
         exports.vs_logger:SendLog(
             "suspect",
-            "⚠️ Suspicious Pattern Detected",
+            "⚠️ Motif Suspect Détecté",
             details,
             source,
             {
@@ -225,7 +222,7 @@ AddEventHandler('vs_sentinel:patternDetected', function(data)
     end
 end)
 
--- Handle suspicious activity logging
+-- Gérer la journalisation des activités suspectes
 RegisterServerEvent('vs_sentinel:logSuspicious')
 AddEventHandler('vs_sentinel:logSuspicious', function(data)
     local source = data.source
@@ -236,13 +233,13 @@ AddEventHandler('vs_sentinel:logSuspicious', function(data)
     local playerName = GetPlayerName(source) or "Unknown"
     
     local message = string.format(
-        "**Suspicious Activity Detected**\n\n" ..
-        "👤 **Player:** %s [%d]\n" ..
-        "🔑 **Identifier:** %s\n" ..
-        "⚠️ **Reason:** %s\n" ..
-        "📝 **Details:** %s\n" ..
-        "⏰ **Timestamp:** %s\n\n" ..
-        "🔍 **Action Required:** Manual investigation recommended",
+        "**Activité Suspecte Détectée**\n\n" ..
+        "👤 **Joueur:** %s [%d]\n" ..
+        "🔑 **Identifiant:** %s\n" ..
+        "⚠️ **Raison:** %s\n" ..
+        "📝 **Détails:** %s\n" ..
+        "⏰ **Horodatage:** %s\n\n" ..
+        "🔍 **Action Requise:** Investigation manuelle recommandée",
         playerName,
         source,
         identifier or "Unknown",
@@ -253,7 +250,7 @@ AddEventHandler('vs_sentinel:logSuspicious', function(data)
     
     exports.vs_logger:SendLog(
         "suspect",
-        "🔍 Suspicious Activity",
+        "🔍 Activité Suspecte",
         message,
         source,
         {
@@ -263,19 +260,19 @@ AddEventHandler('vs_sentinel:logSuspicious', function(data)
     )
 end)
 
--- Get suspicious player statistics
+-- Obtenir les statistiques des joueurs suspects
 function GetSuspiciousPlayerStats(identifier)
     return suspiciousPlayers[identifier]
 end
 
 exports('GetSuspiciousPlayerStats', GetSuspiciousPlayerStats)
 
--- Clear suspicious player data (for when investigating false positives)
+-- Effacer les données des joueurs suspects (pour enquêter sur les faux positifs)
 RegisterServerEvent('vs_sentinel:clearPlayerData')
 AddEventHandler('vs_sentinel:clearPlayerData', function(identifier)
     local source = source
     
-    -- Verify admin permission
+    -- Vérifier la permission admin
     local isAdmin = false
     if Config.UseBridge then
         local success, grade = pcall(function()
@@ -285,25 +282,25 @@ AddEventHandler('vs_sentinel:clearPlayerData', function(identifier)
     end
     
     if not isAdmin then
-        print(string.format("^1[vs_sentinel]^7 Unauthorized clearPlayerData attempt by source %d", source))
+        VsLog('error', _L('sentinel_unauthorized_clear', source))
         return
     end
     
     if suspiciousPlayers[identifier] then
         suspiciousPlayers[identifier] = nil
         suspiciousPlayersCount = suspiciousPlayersCount - 1
-        print(string.format("^2[vs_sentinel]^7 Cleared suspicious data for identifier: %s", identifier))
+        VsLog('success', _L('sentinel_cleared_data', identifier))
         
         exports.vs_logger:SendLog(
             "admin",
-            "🗑️ Suspicious Data Cleared",
-            string.format("Admin cleared suspicious player data for identifier: %s", identifier),
+            "🗑️ Données Suspectes Effacées",
+            string.format("Admin a effacé les données de joueur suspect pour l'identifiant: %s", identifier),
             source
         )
     end
 end)
 
--- Periodic cleanup of old data
+-- Nettoyage périodique des anciennes données
 CreateThread(function()
     while not isResourceStopping and Config.Sentinel.enabled do
         Wait(Config.SentinelDataManagement.cleanupInterval)
@@ -312,7 +309,7 @@ CreateThread(function()
         
         local currentTime = os.time()
         
-        -- Clean old honeypot triggers
+        -- Nettoyer les anciens déclenchements honeypot
         for identifier, triggers in pairs(honeyPotTriggers) do
             local validTriggers = {}
             for _, trigger in ipairs(triggers) do
@@ -329,7 +326,7 @@ CreateThread(function()
             end
         end
         
-        -- Clean old suspicious player data
+        -- Nettoyer les anciennes données de joueurs suspects
         for identifier, data in pairs(suspiciousPlayers) do
             local shouldClean = (currentTime - data.firstDetection > Config.SentinelDataManagement.suspiciousRetention) 
                 and (data.detections < Config.SentinelDataManagement.minDetectionsToKeep)
@@ -341,16 +338,16 @@ CreateThread(function()
         end
         
         if Config.Debug then
-            print("^2[vs_sentinel]^7 Performed periodic data cleanup")
+            VsLog('info', _L('sentinel_cleanup'))
         end
     end
     
     if Config.Debug then
-        print("^3[vs_sentinel]^7 Cleanup thread stopped")
+        VsLog('warning', _L('sentinel_cleanup_stopped'))
     end
 end)
 
--- Command to check suspicious players (admin only)
+-- Commande pour vérifier les joueurs suspects (admin uniquement)
 RegisterCommand('vs_suspicious', function(source, args, rawCommand)
     local isAdmin = false
     
@@ -360,20 +357,20 @@ RegisterCommand('vs_suspicious', function(source, args, rawCommand)
         end)
         isAdmin = success and grade and grade >= Config.MinAdminGrade
     else
-        isAdmin = true -- Allow if bridge is disabled
+        isAdmin = true -- Autoriser si le bridge est désactivé
     end
     
     if not isAdmin then
         return
     end
     
-    -- List all suspicious players
+    -- Lister tous les joueurs suspects
     local count = 0
-    print("^3========== Suspicious Players Report ==========^7")
+    print(_L('report_suspicious_header'))
     
     for identifier, data in pairs(suspiciousPlayers) do
         count = count + 1
-        print(string.format("^3[%d]^7 %s - Detections: %d, First: %s", 
+        print(string.format("^3" .. _L('report_suspicious_entry') .. "^7", 
             count, 
             identifier, 
             data.detections,
@@ -382,13 +379,13 @@ RegisterCommand('vs_suspicious', function(source, args, rawCommand)
     end
     
     if count == 0 then
-        print("^2No suspicious players tracked^7")
+        print("^2" .. _L('report_suspicious_none') .. "^7")
     end
     
-    print("^3===============================================^7")
+    print(_L('report_suspicious_footer'))
 end, false)
 
--- Command to check honeypot triggers (admin only)
+-- Commande pour vérifier les déclenchements honeypot (admin uniquement)
 RegisterCommand('vs_honeypot', function(source, args, rawCommand)
     local isAdmin = false
     
@@ -398,27 +395,27 @@ RegisterCommand('vs_honeypot', function(source, args, rawCommand)
         end)
         isAdmin = success and grade and grade >= Config.MinAdminGrade
     else
-        isAdmin = true -- Allow if bridge is disabled
+        isAdmin = true -- Autoriser si le bridge est désactivé
     end
     
     if not isAdmin then
         return
     end
     
-    -- List all honeypot triggers
+    -- Lister tous les déclenchements honeypot
     local count = 0
-    print("^3========== HoneyPot Triggers Report ==========^7")
+    print(_L('report_honeypot_header'))
     
     for identifier, triggers in pairs(honeyPotTriggers) do
         count = count + 1
-        print(string.format("^3[%d]^7 %s - Triggers: %d", 
+        print(string.format("^3" .. _L('report_honeypot_entry') .. "^7", 
             count, 
             identifier, 
             #triggers
         ))
         
         for i, trigger in ipairs(triggers) do
-            print(string.format("    ^1[%d]^7 %s at %s", 
+            print(string.format("^1" .. _L('report_honeypot_trigger') .. "^7", 
                 i,
                 trigger.event,
                 os.date("%H:%M:%S", trigger.timestamp)
@@ -427,35 +424,35 @@ RegisterCommand('vs_honeypot', function(source, args, rawCommand)
     end
     
     if count == 0 then
-        print("^2No honeypot triggers recorded^7")
+        print("^2" .. _L('report_honeypot_none') .. "^7")
     end
     
-    print("^3===============================================^7")
+    print(_L('report_honeypot_footer'))
 end, false)
 
--- Initialize Sentinel on resource start
+-- Initialiser Sentinel au démarrage de la ressource
 CreateThread(function()
-    Wait(2000) -- Wait for main system to load
+    Wait(2000) -- Attendre que le système principal se charge
     
     if not Config.Sentinel.enabled then
-        print("^3[vs_sentinel]^7 Sentinel module: ^1DISABLED^7")
+        VsLog('warning', _L('sentinel_disabled'))
         return
     end
     
     print("^2========================================^7")
-    print("^2[vs_sentinel]^7 Security Module")
-    print("^2[vs_sentinel]^7 Anti-Cheat & Monitoring")
+    print("^2[vs_sentinel]^7 Module de Sécurité")
+    print("^2[vs_sentinel]^7 Anti-Cheat & Surveillance")
     print("^2========================================^7")
     
     InitializeHoneyPots()
     
-    print("^2[vs_sentinel]^7 Pattern detection: ^2ACTIVE^7")
-    print(string.format("^2[vs_sentinel]^7 Sensitivity: ^3%s^7", Config.Sentinel.patterns.sensitivity))
-    print("^2[vs_sentinel]^7 Sentinel module ready!")
-    print("^3[vs_sentinel]^7 Commands: ^2/vs_suspicious^7, ^2/vs_honeypot^7")
+    VsLog('success', _L('sentinel_pattern_active'))
+    VsLog('info', _L('sentinel_sensitivity', Config.Sentinel.patterns.sensitivity))
+    VsLog('success', _L('sentinel_ready'))
+    VsLog('info', _L('sentinel_commands'))
 end)
 
--- Export sentinel status
+-- Exporter le statut de Sentinel
 function GetSentinelStatus()
     return {
         enabled = Config.Sentinel.enabled,
@@ -468,13 +465,13 @@ end
 
 exports('GetSentinelStatus', GetSentinelStatus)
 
--- Cleanup on resource stop
+-- Nettoyage à l'arrêt de la ressource
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then
         return
     end
     
     isResourceStopping = true
-    print("^3[vs_sentinel]^7 Sentinel module stopped")
+    VsLog('warning', _L('sentinel_stopped'))
 end)
 
