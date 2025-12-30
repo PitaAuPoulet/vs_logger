@@ -16,9 +16,8 @@ Config.UseBridge = true
 Config.BridgeName = "vs_bridge"
 Config.MinAdminGrade = 3 -- Minimum grade required for security logs
 
--- Zero-SQL Configuration
-Config.DatabaseName = "vs_logger.db"
-Config.AutoCreateTables = true
+-- Database Configuration (MySQL/MariaDB)
+Config.AutoCreateTables = true -- Zero-SQL: Automatically create tables if they don't exist
 
 -- Webhook Configuration
 Config.Webhooks = {

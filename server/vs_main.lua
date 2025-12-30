@@ -6,8 +6,6 @@
     Core logging functionality with Zero-SQL database management
 ]]
 
-local sqlite3 = nil
-local db = nil
 local rateLimitTracker = {}
 local queryQueue = {}
 local activeQueries = 0
@@ -25,7 +23,6 @@ local function InitializeDatabase()
     
     CreateThread(function()
         -- Create logs table structure (MySQL/MariaDB syntax)
-        -- Note: This uses MySQL-specific AUTO_INCREMENT syntax
         local createTableQuery = [[
             CREATE TABLE IF NOT EXISTS vs_logs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,10 +41,23 @@ local function InitializeDatabase()
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ]]
         
-        -- In a real FiveM environment, this would execute the query
-        -- For Zero-SQL approach, we assume the table is created automatically
-        if Config.Debug then
-            print("^2[vs_logger]^7 Database tables initialized successfully!")
+        -- Execute table creation using oxmysql or mysql-async
+        local success = pcall(function()
+            if GetResourceState('oxmysql') == 'started' then
+                exports.oxmysql:execute(createTableQuery)
+            elseif GetResourceState('mysql-async') == 'started' then
+                exports['mysql-async']:mysql_execute(createTableQuery)
+            else
+                print("^1[vs_logger]^7 WARNING: No MySQL resource found (oxmysql or mysql-async required)")
+            end
+        end)
+        
+        if success then
+            if Config.Debug then
+                print("^2[vs_logger]^7 Database tables initialized successfully!")
+            end
+        else
+            print("^1[vs_logger]^7 ERROR: Failed to initialize database tables")
         end
     end)
     
@@ -239,13 +249,42 @@ local function SaveToDatabase(logData)
     activeQueries = activeQueries + 1
     
     CreateThread(function()
-        -- In a real implementation, this would insert into MySQL/oxmysql
-        -- For Zero-SQL approach, we simulate database storage
-        local success = true -- Assume success
+        -- Insert log into MySQL database
+        local success = pcall(function()
+            local metadataJson = logData.metadata and json.encode(logData.metadata) or '{}'
+            
+            local query = [[
+                INSERT INTO vs_logs 
+                (timestamp, log_type, player_source, player_identifier, player_name, title, message, metadata) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ]]
+            
+            local params = {
+                logData.timestamp,
+                logData.log_type,
+                logData.source,
+                logData.identifier,
+                logData.playerName,
+                logData.title,
+                logData.message,
+                metadataJson
+            }
+            
+            if GetResourceState('oxmysql') == 'started' then
+                exports.oxmysql:execute(query, params)
+            elseif GetResourceState('mysql-async') == 'started' then
+                exports['mysql-async']:mysql_execute(query, params)
+            end
+        end)
         
         if Config.Debug then
-            print(string.format("^2[vs_logger]^7 Saved log to database: %s - %s", 
-                logData.log_type, logData.title))
+            if success then
+                print(string.format("^2[vs_logger]^7 Saved log to database: %s - %s", 
+                    logData.log_type, logData.title))
+            else
+                print(string.format("^1[vs_logger]^7 Failed to save log to database: %s - %s", 
+                    logData.log_type, logData.title))
+            end
         end
         
         activeQueries = activeQueries - 1

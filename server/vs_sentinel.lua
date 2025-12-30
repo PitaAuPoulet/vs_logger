@@ -147,12 +147,13 @@ exports('CheckSuspiciousPatterns', CheckSuspiciousPatterns)
 -- Handle pattern checking request
 RegisterServerEvent('vs_sentinel:checkPatterns')
 AddEventHandler('vs_sentinel:checkPatterns', function(data)
-    local suspiciousScore = CheckSuspiciousPatterns(data.message)
+    local suspiciousScore, matchedKeywords = CheckSuspiciousPatterns(data.message)
     if suspiciousScore > 0 then
         TriggerEvent('vs_sentinel:patternDetected', {
             source = data.source,
             message = data.message,
             score = suspiciousScore,
+            keywords = matchedKeywords,
             original_log_type = data.original_log_type
         })
     end
