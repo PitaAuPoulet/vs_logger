@@ -38,4 +38,25 @@ Le système centralise tous les événements serveurs et clients. Grâce au **Ze
 L'architecture suit strictement la nomenclature **Elite** :
 
 * **`server/sv_main.lua`** : Cœur logique et enregistrement des exports.
-* **`server/sv_database.lua`** : Moteur d
+* **`server/sv_database.lua`** : Moteur d'initialisation et de persistance SQL.
+* **`server/sv_webhooks.lua`** : Gestionnaire de requêtes HTTP vers l'API Discord.
+* **`server/sv_gatekeeper.lua`** : Couche de sécurité et d'analyse des payloads.
+* **`shared/config.lua`** : Point d'entrée unique pour la configuration.
+
+---
+
+## 🚀 Installation
+1.  Extraire le dossier `vs_logger` dans vos ressources.
+2.  S'assurer que `ox_lib` et `vs_bridge` sont démarrés au préalable.
+3.  Définir vos URLs Webhooks dans `shared/config.lua`.
+4.  Ajouter `ensure vs_logger` dans votre `server.cfg`.
+
+---
+
+## 🛠️ API & Exports
+
+### LogAction (Serveur uniquement)
+Enregistre une action de manière persistante et notifie Discord.
+
+```lua
+exports.vs_logger:LogAction(targetSource, category, action, metadata)
