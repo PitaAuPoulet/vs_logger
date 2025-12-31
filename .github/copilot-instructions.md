@@ -1,25 +1,40 @@
-# Vitaswift "CodeArchitect Elite" Standards
+# 🤖 Copilot Instructions | Vitaswift Architecture
 
-Vous agissez en tant qu'Architecte FiveM Senior pour l'écosystème Vitaswift.
+## 📋 Profil du Projet
+- **Développeur Principal :** Vitaswift
+- **Standard de Code :** CodeArchitect Elite (Nomenclature CamelCase, code en anglais, commentaires en français).
+- **Écosystème :** FiveM (GTA V) - Architecture modulaire propriétaire.
 
-## 1. Architecture & Dépendances
-- **Bridge Central** : La ressource `vs_bridge` est la SEULE autorisée pour toute interaction framework ou base de données (Zero-SQL).
-- **Interdiction** : Ne jamais importer `ESX`, `QBCore` ou `Qbox` directement.
-- **Modularité** : Le code doit être segmenté (client/modules/, server/modules/) et préfixé `vs_`.
+---
 
-## 2. Standards de Code & Signature
-- **Nomenclature** : Fonctions/Variables en Anglais (CamelCase).
-- **Signature** : Chaque fichier Lua doit débuter par : `-- Author: Vitaswift | Part of: vs_logger`
-- **Versioning** : Uniquement dans `fxmanifest.lua` et `README.md`. Aucun numéro de version dans les fichiers individuels.
+## 🧠 Mémoire Technique & Dépendances
+- **Framework de Base :** Principalement QBCore, via une abstraction universelle.
+- **Pont Central (vs_bridge) :** Initialise l'objet global `Bridge`. Sert de couche d'abstraction pour le support multi-framework.
+- **Système de Log (vs_logger) :**
+    - Système hybride SQL (oxmysql) et Discord (Webhooks).
+    - **Zero-SQL** : Auto-création des tables via le script.
+    - **Export Global** : `exports.vs_logger:LogAction(source, category, action, metadata)`.
+- **Bibliothèques Clés :** `ox_lib` pour les utilitaires et `oxmysql` pour la persistance.
 
-## 3. Workflow de Publication (Commits)
-- **Vérification Finale** : Avant chaque proposition de commit, vérifiez TOUS les fichiers du dossier pour assurer la conformité des signatures et l'absence de code mort.
-- **Format de Commit** : Utilisez toujours des titres professionnels (ex: `feat(core): ...`, `fix(security): ...`, `docs: ...`) suivis d'une liste détaillée des changements.
+---
 
-## 4. Langue
-- **Code** : Anglais.
-- **Documentation & Commentaires** : Français exclusivement.
+## 🛠️ Règles de Développement "Elite"
+1. **Priorité au Bridge :** Toujours utiliser `Bridge.GetPlayerFromId(source)` plutôt que les appels natifs du framework.
+2. **Ordre de Chargement :** Les fichiers `shared` doivent toujours précéder les scripts serveur/client dans le manifeste.
+3. **Sécurité Gatekeeper :** Chaque export exposé au client doit passer par une fonction de validation de payload.
+4. **Documentation :** Chaque nouvelle ressource doit inclure les fichiers `README.md`, `ROADMAP.md` et `LICENSE.md` selon les modèles établis.
 
-## 5. Sécurité (Critique)
-- **Gatekeeper** : Validation systématique via `vs_gatekeeper` pour tout événement Server-Side.
-- **Zero-SQL** : Auto-création des tables via `vs_bridge` au démarrage.
+---
+
+## 📂 Nomenclature des Fichiers
+- `client/cl_*.lua` : Scripts côté client.
+- `server/sv_*.lua` : Scripts côté serveur.
+- `shared/*.lua` : Configuration et données partagées.
+- `fxmanifest.lua` : Toujours utiliser `lua54 'yes'`.
+
+---
+
+## 🚀 Intentions Futures (Roadmap Globale)
+- **vs_notify** : Système de notifications personnalisé.
+- **vs_admin** : Panel d'administration intégré utilisant les logs et le bridge.
+- **Extensions vs_logger** : Screenshot-basic et système de purge automatique.
