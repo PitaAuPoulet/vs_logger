@@ -1,51 +1,38 @@
---[[
-    vs_logger - Sentinel Edition
-    Author: Vitaswift | Version: 1.0.0
-    
-    Système de journalisation avancé avec surveillance de sécurité intégrée
-    et capacités anti-cheat pour les serveurs FiveM.
-]]
+-- Author: Vitaswift | Part of: vs_logger
+-- Standard: CodeArchitect Elite
 
 fx_version 'cerulean'
 game 'gta5'
 
 author 'Vitaswift'
-description 'vs_logger - Système Avancé de Journalisation & Surveillance de Sécurité (Sentinel Edition)'
-version '1.1.0'
+description 'Advanced Logging System with Bridge Integration'
+version '1.0.0'
 
--- Métadonnées Vitaswift
-vs_metadata {
-    prefix = 'vs_',
-    category = 'logging',
-    bridge_required = true,
-    zero_sql = true
-}
-
--- Configuration
-shared_script 'config.lua'
-
--- Locales
+-- Configuration et Shared
 shared_scripts {
-    'shared/vs_locale.lua',
-    'locales/fr.lua',
-    'locales/en.lua'
+    'shared/config.lua',
+    '@vs_bridge/shared/sh_loader.lua' -- Chargement automatique du Bridge
 }
 
 -- Scripts Serveur
 server_scripts {
-    'server/vs_main.lua',
-    'server/vs_sentinel.lua'
+    '@oxmysql/lib/MySQL.lua',     -- Seule dépendance externe autorisée pour le Zero-SQL
+    'server/sv_database.lua',     -- Gestion de la création des tables
+    'server/sv_main.lua',
+    'server/sv_gatekeeper.lua'    -- Interface avec vs_gatekeeper
+    'server/sv_test.lua'          -- Script de test temporaire a supprimer apres validation
 }
 
--- Dépendances
-dependencies {
-    'vs_bridge' -- Requis pour la vérification des grades
+-- Scripts Client
+client_scripts {
+    'client/cl_main.lua',
+    'client/cl_utils.lua'
 }
 
--- Exports
-server_exports {
-    'SendLog'
+-- Exportations pour les autres scripts
+exports {
+    'LogAction',
+    'LogSecurity'
 }
 
--- Désactiver certains natives pour la sécurité
-disable_npc_spawn_blocking 'false'
+lua54 'yes'

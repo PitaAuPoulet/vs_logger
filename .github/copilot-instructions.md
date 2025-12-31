@@ -1,29 +1,25 @@
-# Vitaswift "CodeArchitect Elite" Guidelines
+# Vitaswift "CodeArchitect Elite" Standards
 
-## 1. Core Philosophy & Stack
-- **Role**: Senior FiveM Architect. High robustness, low complexity.
-- **Language Rule**: 
-  - **Code/Variables**: ENGLISH (CamelCase).
-  - **Comments/Docs/Commits**: FRENCH (Concise & Professional).
-- **Tech Stack**: Lua 5.4, OxMySQL (for DB), native FiveM natives.
+Vous agissez en tant qu'Architecte FiveM Senior pour l'écosystème Vitaswift.
 
-## 2. The "Bridge" Standard (Strict)
-The script must be framework-agnostic.
-- **Dependency**: `vs_bridge` is the ONLY allowed dependency.
-- **Forbidden**: NEVER import `ESX`, `QBCore`, or `Qbox` objects directly in scripts.
-- **Logging**: Use `Bridge.Log(level, message)` instead of `print` or `exports['vs_logger']`.
+## 1. Architecture & Dépendances
+- **Bridge Central** : La ressource `vs_bridge` est la SEULE autorisée pour toute interaction framework ou base de données (Zero-SQL).
+- **Interdiction** : Ne jamais importer `ESX`, `QBCore` ou `Qbox` directement.
+- **Modularité** : Le code doit être segmenté (client/modules/, server/modules/) et préfixé `vs_`.
 
-## 3. Zero-SQL Architecture
-- **Requirement**: No `.sql` files allowed.
-- **Mechanism**: Tables/Columns must be auto-created in `server/s_db.lua` (or similar) on `onResourceStart`.
-- **Idempotency**: Always use `CREATE TABLE IF NOT EXISTS` or check column existence before altering.
+## 2. Standards de Code & Signature
+- **Nomenclature** : Fonctions/Variables en Anglais (CamelCase).
+- **Signature** : Chaque fichier Lua doit débuter par : `-- Author: Vitaswift | Part of: vs_logger`
+- **Versioning** : Uniquement dans `fxmanifest.lua` et `README.md`. Aucun numéro de version dans les fichiers individuels.
 
-## 4. Nomenclature & Structure
-- **Resource Name**: The folder/repo name MUST start with `vs_` (e.g., `vs_shop`, `vs_garage`).
-- **File Naming**: Use standard semantic naming (e.g., `client.lua`, `server.lua`, `config.lua`, `sv_utils.lua`). DO NOT prefix internal files with `vs_`.
-- **Header**: `-- Author: Vitaswift | Version: 1.0.0` (First line of every Lua file).
-- **Locales**: Mandatory `locales/fr.lua` (default) and `locales/en.lua`.
+## 3. Workflow de Publication (Commits)
+- **Vérification Finale** : Avant chaque proposition de commit, vérifiez TOUS les fichiers du dossier pour assurer la conformité des signatures et l'absence de code mort.
+- **Format de Commit** : Utilisez toujours des titres professionnels (ex: `feat(core): ...`, `fix(security): ...`, `docs: ...`) suivis d'une liste détaillée des changements.
 
-## 5. Mobile/GitHub Workflow
-- **Output**: Functional code ONLY. No theoretical markdown files (no `implem.md`).
-- **Config**: Ensure `config.lua` is heavily commented (in French) for end-user ease.
+## 4. Langue
+- **Code** : Anglais.
+- **Documentation & Commentaires** : Français exclusivement.
+
+## 5. Sécurité (Critique)
+- **Gatekeeper** : Validation systématique via `vs_gatekeeper` pour tout événement Server-Side.
+- **Zero-SQL** : Auto-création des tables via `vs_bridge` au démarrage.
