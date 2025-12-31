@@ -11,16 +11,16 @@ version '1.0.0'
 -- Configuration et Shared
 shared_scripts {
     'shared/config.lua',
-    '@vs_bridge/shared/sh_loader.lua' -- Chargement automatique du Bridge
+    '@vs_bridge/shared/sh_loader.lua'
 }
 
 -- Scripts Serveur
 server_scripts {
-    '@oxmysql/lib/MySQL.lua',     -- Seule dépendance externe autorisée pour le Zero-SQL
-    'server/sv_database.lua',     -- Gestion de la création des tables
+    '@oxmysql/lib/MySQL.lua',
+    'server/sv_database.lua',
+    'server/sv_gatekeeper.lua',
     'server/sv_main.lua',
-    'server/sv_gatekeeper.lua'    -- Interface avec vs_gatekeeper
-    'server/sv_test.lua'          -- Script de test temporaire a supprimer apres validation
+    'server/sv_test.lua'      -- La virgule ici est cruciale
 }
 
 -- Scripts Client
