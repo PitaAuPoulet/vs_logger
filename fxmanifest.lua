@@ -4,31 +4,23 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'Vitaswift'
-description 'Advanced Logging System with Bridge Integration'
-version '1.0.0'
-
--- Configuration et Shared
 shared_scripts {
     'shared/config.lua'
 }
 
--- Scripts Serveur
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'server/sv_database.lua',
-    'server/sv_gatekeeper.lua',
-    'server/sv_main.lua',
-    'server/sv_test.lua'
+    'server/sv_webhooks.lua',   -- DOIT ÊTRE AVANT sv_gatekeeper
+    'server/sv_gatekeeper.lua', -- Contient InternalLog
+    'server/sv_main.lua'        -- Contient l'Export
 }
 
--- Scripts Client
 client_scripts {
     'client/cl_main.lua',
     'client/cl_utils.lua'
 }
 
--- Exportations
 exports {
     'LogAction'
 }
