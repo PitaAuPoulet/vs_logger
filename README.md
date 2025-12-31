@@ -12,6 +12,7 @@
 
 ## 📑 Sommaire
 * [Aperçu](#-aperçu)
+* [Dépendances](#-dépendances)
 * [Fonctionnalités Clés](#-fonctionnalités-clés)
 * [Structure Technique](#-structure-technique)
 * [Installation](#-installation)
@@ -25,12 +26,21 @@ Le système centralise tous les événements serveurs et clients. Grâce au **Ze
 
 ---
 
+## 📦 Dépendances
+Pour fonctionner au sommet de ses capacités, `vs_logger` nécessite les ressources suivantes :
+
+* 🧩 **vs_bridge** : Assure la communication avec le Framework (QBCore/ESX).
+* 💾 **oxmysql** : Gestionnaire de base de données haute performance.
+* 📚 **ox_lib** : Bibliothèque de fonctions utilitaires avancées.
+
+---
+
 ## ✨ Fonctionnalités Clés
-* 🔗 **Liaison Framework** : Intégration native avec `vs_bridge` pour identifier les joueurs (QBCore/ESX).
+* 🔗 **Liaison Framework** : Intégration native avec `vs_bridge` pour identifier les joueurs.
 * 🗄️ **Auto-Database** : Création automatique de la table `vs_logs` dès le premier lancement.
-* 🛡️ **Gatekeeper Layer** : Filtrage et validation des requêtes pour empêcher le flood et les injections.
-* 🎭 **Discord Embeds** : 5 catégories pré-configurées avec couleurs, icônes et titres dynamiques.
-* 📊 **JSON Metadata** : Stockage illimité de données contextuelles (coord, items, infos banques).
+* 🛡️ **Gatekeeper Layer** : Filtrage et validation des requêtes pour empêcher le flood.
+* 🎭 **Discord Embeds** : 5 catégories pré-configurées avec couleurs et icônes.
+* 📊 **JSON Metadata** : Stockage flexible des données contextuelles (coord, items, banques).
 
 ---
 
@@ -46,10 +56,10 @@ L'architecture suit strictement la nomenclature **Elite** :
 ---
 
 ## 🚀 Installation
-1.  Extraire le dossier `vs_logger` dans vos ressources.
-2.  S'assurer que `ox_lib` et `vs_bridge` sont démarrés au préalable.
-3.  Définir vos URLs Webhooks dans `shared/config.lua`.
-4.  Ajouter `ensure vs_logger` dans votre `server.cfg`.
+1. Extraire le dossier `vs_logger` dans vos ressources.
+2. S'assurer que les **dépendances** sont démarrées au préalable.
+3. Définir vos URLs Webhooks dans `shared/config.lua`.
+4. Ajouter `ensure vs_logger` dans votre `server.cfg`.
 
 ---
 
