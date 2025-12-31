@@ -2,42 +2,51 @@
 -- Standard: CodeArchitect Elite | Core Logic
 
 Bridge = nil
+Config = Config or {}
 
--- Récupération de l'objet partagé du Bridge au démarrage
-TriggerEvent('vs_bridge:getSharedObject', function(obj) Bridge = obj end)
-
---- Export Global pour les autres scripts
---- @param targetSource number L'ID du joueur (ou 0 pour le serveur)
---- @param category string La catégorie (Admin, Money, etc.)
---- @param action string Description de l'action
---- @param metadata table (Optionnel) Données supplémentaires
-exports('LogAction', function(targetSource, category, action, metadata)
-    if not category or not action then 
-        return print(("^1%s ^7Error: Missing category or action in LogAction export."):format(Config.Prefix)) 
+-- Tentative de récupération du Bridge via export (plus robuste)
+CreateThread(function()
+    local attempts = 0
+    while Bridge == nil and attempts < 10 do
+        attempts = attempts + 1
+        TriggerEvent('vs_bridge:getSharedObject', function(obj) 
+            Bridge = obj 
+        end)
+        
+        if not Bridge then
+            -- Fallback si l'event ne répond pas : essai via export
+            local bridgeRes = GetResourceState('vs_bridge')
+            if bridgeRes == 'started' then
+                Bridge = exports['vs_bridge']:GetBridgeObject()
+            end
+        end
+        
+        if not Bridge then Wait(1000) end
     end
 
-    -- Si c'est un log venant d'un joueur, on passe par le Gatekeeper
+    if Bridge then
+        print(("^2%s ^7Bridge successfully linked. Mode: ^5%s^7"):format(Config.Prefix, Bridge.GetFramework()))
+    else
+        print(("^1%s ^7Warning: Bridge connection timed out. Using standalone mode.^7"):format(Config.Prefix))
+    end
+end)
+
+--- Export Global
+exports('LogAction', function(targetSource, category, action, metadata)
+    if not category or not action then return end
+
     if targetSource and targetSource > 0 then
-        local payload = { category = category, action = action }
-        if ValidateLogRequest(targetSource, payload) then
+        if ValidateLogRequest(targetSource, {category = category, action = action}) then
             InternalLog(category, action, targetSource, metadata)
         end
     else
-        -- Log système / serveur (toujours autorisé)
         InternalLog(category, action, 0, metadata)
     end
 end)
 
---- Event décorrélé pour les appels Client via TriggerServerEvent
 RegisterNetEvent('vs_logger:server:log', function(data)
     local _source = source
-    
-    -- Sécurité : On vérifie la structure via le Gatekeeper
     if ValidateLogRequest(_source, data) then
         InternalLog(data.category, data.action, _source, data.metadata)
-        
-        if Config.DebugMode then
-            print(("^2%s ^7Log received from ID %s: %s"):format(Config.Prefix, _source, data.action))
-        end
     end
 end)

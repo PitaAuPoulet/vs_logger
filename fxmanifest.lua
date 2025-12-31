@@ -10,8 +10,7 @@ version '1.0.0'
 
 -- Configuration et Shared
 shared_scripts {
-    'shared/config.lua',
-    '@vs_bridge/shared/sh_loader.lua'
+    'shared/config.lua'
 }
 
 -- Scripts Serveur
@@ -20,7 +19,7 @@ server_scripts {
     'server/sv_database.lua',
     'server/sv_gatekeeper.lua',
     'server/sv_main.lua',
-    'server/sv_test.lua'      -- La virgule ici est cruciale
+    'server/sv_test.lua'
 }
 
 -- Scripts Client
@@ -29,10 +28,9 @@ client_scripts {
     'client/cl_utils.lua'
 }
 
--- Exportations pour les autres scripts
+-- Exportations
 exports {
-    'LogAction',
-    'LogSecurity'
+    'LogAction'
 }
 
 lua54 'yes'
