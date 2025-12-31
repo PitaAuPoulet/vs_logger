@@ -4,34 +4,22 @@
 Bridge = nil
 Config = Config or {}
 
--- Tentative de récupération du Bridge via export (plus robuste)
-CreateThread(function()
-    local attempts = 0
-    while Bridge == nil and attempts < 10 do
-        attempts = attempts + 1
-        TriggerEvent('vs_bridge:getSharedObject', function(obj) 
-            Bridge = obj 
-        end)
-        
-        if not Bridge then
-            -- Fallback si l'event ne répond pas : essai via export
-            local bridgeRes = GetResourceState('vs_bridge')
-            if bridgeRes == 'started' then
-                Bridge = exports['vs_bridge']:GetBridgeObject()
-            end
-        end
-        
-        if not Bridge then Wait(1000) end
-    end
+-- Initialisation propre via l'objet partagé du Bridge
+TriggerEvent('vs_bridge:getSharedObject', function(obj) 
+    Bridge = obj 
+end)
 
+-- Attente de l'initialisation pour confirmer le lien
+CreateThread(function()
+    Wait(500)
     if Bridge then
         print(("^2%s ^7Bridge successfully linked. Mode: ^5%s^7"):format(Config.Prefix, Bridge.GetFramework()))
     else
-        print(("^1%s ^7Warning: Bridge connection timed out. Using standalone mode.^7"):format(Config.Prefix))
+        print(("^1%s ^7CRITICAL ERROR: Could not link to vs_bridge!^7"):format(Config.Prefix))
     end
 end)
 
---- Export Global
+--- Export Global LogAction
 exports('LogAction', function(targetSource, category, action, metadata)
     if not category or not action then return end
 
